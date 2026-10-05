@@ -34,6 +34,7 @@ class Config:
     horizon_s: float = 3600.0
     targets: dict = field(default_factory=lambda: {"P0": 0.99, "P1": 0.95, "P2": 0.90, "P3": 0.80})
     min_gain: float = 0.002
+    forward_ratio: float = 1.5               # a next hop must have a clearly better gateway rate
     holder_ttl_s: float = 1800.0             # unheard holders decay with this time constant
 
     # Hazard model.

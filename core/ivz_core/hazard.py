@@ -12,7 +12,7 @@ def hazard(s: Sensors, baseline: Baseline, cfg: Config) -> Hazard:
     dp = s.pressure_kpa - baseline.pressure_kpa
     if dp > cfg.submersion_kpa:
         depth_m = dp / KPA_PER_M
-        lam += (1.0 + 4.0 * depth_m) / 600.0
+        lam += (1.0 + 10.0 * depth_m) / 400.0
         causes.append("submersion")
 
     if s.water_pads:

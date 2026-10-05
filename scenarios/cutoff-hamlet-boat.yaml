@@ -1,0 +1,29 @@
+name: cutoff-hamlet-boat
+title: Cut-off hamlet and a passing boat
+description: >
+  A hamlet is cut off by floodwater, out of range of every relay. A rescue boat passing
+  on the river carries its SOS messages across the partition (store-and-forward).
+seed: 11
+duration_s: 7200
+world:
+  size_m: 5000
+  grid: 72
+  terrain: river_valley
+  river_x: 0.4
+  hills:
+    - [2650, 350, 9, 400]
+nodes:
+  - { kind: household, count: 40, mount: mixed, floating_frac: 0.3, height_m: 1.0, area: [2000, 500, 2800, 1500], min_ground: 0.2, max_ground: 3.0 }
+  - { kind: household, count: 26, mount: mixed, floating_frac: 0.25, height_m: 0.8, area: [1950, 3800, 2700, 4400], min_ground: 0.2, max_ground: 2.2 }
+  - { kind: relay, count: 3, mount: rooftop, height_m: 8, solar: true, area: [2200, 700, 2800, 1500] }
+  - { kind: gateway, at: [2650, 350], height_m: 15 }
+mobile:
+  - { kind: boat, route: [[2350, 1200], [2250, 2400], [2300, 4050]], speed_mps: 3, depart_s: 2700 }
+water:
+  level_m: [[0, 0.0], [1800, 1.2], [5400, 2.4], [7200, 2.6]]
+quake:
+  collapses: []
+  random_per_hour: 0
+sos:
+  rate_per_hour: 30
+  classes: { P0: 0.5, P1: 0.2, P2: 0.2, P3: 0.1 }

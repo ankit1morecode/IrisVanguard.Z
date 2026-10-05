@@ -53,8 +53,17 @@ def nb(i, **kw):
 
 def test_plan_copies_until_target():
     store = [StoredMsg("A:1", "P0", own=True)]
-    res = plan(node(), [nb("B"), nb("C")], store, cfg)
-    assert len(res.actions) == 1 and res.actions[0].to in {"B", "C"}
+    res = plan(node(mu=1e-3), [nb("B"), nb("C")], store, cfg)
+    assert len(res.actions) == 1 and res.actions[0].to in {"B", "C"} and res.actions[0].kind == "SEND"
+
+
+def test_forward_towards_better_route():
+    store = [StoredMsg("A:1", "P3", own=True)]
+    res = plan(node(mu=0.01), [nb("B", mu=0.001), nb("C", mu=0.05)], store, cfg)
+    assert res.actions[0].kind == "FORWARD" and res.actions[0].to == "C"
+    # once a closer holder is known the box stops forwarding
+    store[0].holders["C"] = HolderInfo(lam=1e-5, mu=0.05)
+    assert not plan(node(mu=0.01), [nb("B", mu=0.001)], store, cfg).actions
 
 
 def test_evacuating_box_hands_off_even_with_safe_holders():
@@ -114,6 +123,6 @@ def test_no_copy_once_target_met(lam, mu, hl, nbl, cls, evac):
     res = plan(node(lam=lam, mu=mu, evacuating=evac), neighbours, store, cfg)
     S = res.survival["M:1"]
     if S >= cfg.targets[cls]:
-        assert not res.actions
+        assert not [a for a in res.actions if a.kind == "SEND"]
     for a in res.actions:
         assert a.s_after > a.s_before and not math.isnan(a.s_after)

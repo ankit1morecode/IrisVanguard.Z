@@ -75,7 +75,7 @@ class GateResult:
 
 @dataclass(frozen=True)
 class Action:
-    kind: str                       # SEND | HOLD
+    kind: str                       # FORWARD | SEND
     key: str
     to: str = ""
     toa_s: float = 0.0
@@ -91,6 +91,7 @@ class TraceEntry:
     density: float
     gain: float
     failed: tuple
+    kind: str = "copy"              # copy (survival) | forward (custody towards a gateway)
 
 
 @dataclass

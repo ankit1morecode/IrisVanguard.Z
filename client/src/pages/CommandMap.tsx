@@ -58,7 +58,7 @@ function LiveCommandMap({ runId }: { runId: string }) {
         <div className="pointer-events-none absolute inset-0 flex flex-col gap-3 p-3">
           <div className="pointer-events-auto"><RunHeader /></div>
           <div className="flex min-h-0 flex-1 items-start justify-between gap-3">
-            <div className="pointer-events-auto hidden max-h-full md:block"><Legend /></div>
+            <div className="pointer-events-auto hidden h-full md:flex"><Legend /></div>
             <div className="pointer-events-auto h-full w-[min(360px,100%)]"><Inspector /></div>
           </div>
           <div className="pointer-events-auto"><Timeline /></div>

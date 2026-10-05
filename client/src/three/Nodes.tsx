@@ -90,7 +90,7 @@ export function Nodes({ init, frame, selected, hovered, onPick, onHover, compact
         tmpQ.setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2)
         tmpM.compose(tmpP, tmpQ, tmpS)
         discs.current.setMatrixAt(i, tmpM)
-        discs.current.setColorAt(i, tmpC.set(NET_COLORS[frame.nodes.net[i]] || C.mute).multiplyScalar(0.07))
+        discs.current.setColorAt(i, tmpC.set(NET_COLORS[frame.nodes.net[i]] || C.mute).multiplyScalar(0.035))
       }
       discs.current.instanceMatrix.needsUpdate = true
       if (discs.current.instanceColor) discs.current.instanceColor.needsUpdate = true
@@ -121,7 +121,7 @@ export function Nodes({ init, frame, selected, hovered, onPick, onHover, compact
       const dead = state[i] === 3
       const kind = init.nodes[i].kind
       const life = Math.min(Math.max(Math.log10(Math.max(tau[i], 1) / 300) / Math.log10((72 * 3600) / 300), 0), 1)
-      const base = (kind === 'gateway' ? 3.4 : kind === 'relay' ? 2.4 : 1.2) * (0.55 + 0.6 * life)
+      const base = (kind === 'gateway' ? 2.6 : kind === 'relay' ? 1.9 : 1.0) * (0.55 + 0.6 * life)
       const hz = tauPulseHz(tau[i])
       const pulse = reduced ? 1 : 1 + (state[i] >= 1 ? 0.22 : 0.06) * Math.sin(t * Math.PI * 2 * hz + i)
       tmpP.copy(pos.current[i])
@@ -131,8 +131,9 @@ export function Nodes({ init, frame, selected, hovered, onPick, onHover, compact
       mesh.setMatrixAt(i, tmpM)
       if (kind === 'gateway') tmpC.set(C.safe)
       else tauColor(tau[i], tmpC, init.cfg.evac_tau_s)
+      const st = state[i]
       const flash = state[i] === 2 && !reduced ? 0.6 + 0.6 * Math.abs(Math.sin(t * 9)) : 1
-      tmpC.multiplyScalar((i === selected ? 2.2 : i === hovered ? 1.8 : 1.15) * flash)
+      tmpC.multiplyScalar((i === selected ? 1.6 : i === hovered ? 1.2 : st === 0 ? 0.32 : 0.75) * flash)
       mesh.setColorAt(i, tmpC)
     }
     mesh.instanceMatrix.needsUpdate = true

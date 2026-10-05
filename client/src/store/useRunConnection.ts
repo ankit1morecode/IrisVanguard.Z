@@ -64,6 +64,9 @@ export function useRunConnection(maybeStore: RunStore | null) {
         } else if (msg.type === 'init') {
           s.setInit(msg)
         } else if (msg.type === 'frame') {
+          // Frames only advance while the run plays (e.g. a race released by the server after starting paused).
+          const lastTick = s.frames[s.frames.length - 1]?.tick ?? -1
+          if (s.paused && msg.tick > lastTick && !msg.focus && !msg.events.some((e: { t: string }) => e.t === 'inject')) store.setState({ paused: false })
           queue(msg)
         } else if (msg.type === 'ended') {
           store.setState({ ended: true, meta: s.meta ? { ...s.meta, status: 'ended', summary: msg.summary } : s.meta })

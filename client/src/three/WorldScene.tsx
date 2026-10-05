@@ -80,7 +80,7 @@ function SceneContents({ init, compact }: { init: InitPayload; compact: boolean 
       <OrbitControls makeDefault enableDamping dampingFactor={0.08} maxPolarAngle={1.32} minDistance={18} maxDistance={220} target={[0, 0, 4]} />
       <Suspense fallback={null}>
         <EffectComposer multisampling={0}>
-          <Bloom mipmapBlur intensity={compact ? 0.7 : 0.95} luminanceThreshold={0.32} luminanceSmoothing={0.2} />
+          <Bloom mipmapBlur intensity={compact ? 0.7 : 0.95} luminanceThreshold={0.45} luminanceSmoothing={0.2} />
           <Vignette eskil={false} offset={0.2} darkness={0.75} />
         </EffectComposer>
       </Suspense>

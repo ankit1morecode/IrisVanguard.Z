@@ -22,6 +22,8 @@ HOP_DISCOUNT = 0.5
 BEACON_S = 60
 NB_EXPIRY_S = 200
 CONFIRM_TTL_S = 900
+LINKS_PER_NODE = 6
+LINKS_EVERY_S = 30
 
 
 class Node:
@@ -88,6 +90,7 @@ class Sim:
         self.events = []
         self.t = 0
         self.focus = None
+        self._links_t = -1
         self.sos_seq = {}
         self.metrics = dict(created=0, delivered=0, lost=0, copies=0, failed=0, airtime_s=0.0,
                             relay_airtime_s=0.0, energy_j=0.0, beacons=0, dead=0, evacuations=0)
@@ -546,14 +549,10 @@ class Sim:
                 state.append(1)
             else:
                 state.append(0)
-        lim = self.cfg.snr_limit_db
-        links = []
-        for n in ns:
-            if not n.alive:
-                continue
-            for i, nb in n.nbrs.items():
-                if i > n.idx and ns[i].alive:
-                    links += [n.idx, i, round(nb["snr"] - lim, 1)]
+        links = None
+        if self.t - self._links_t >= LINKS_EVERY_S or self._links_t < 0:
+            links = self.links()
+            self._links_t = self.t
         msgs = []
         for m in self.msgs.values():
             if m.resolved_at is not None and self.t - m.resolved_at > 60:
@@ -572,16 +571,33 @@ class Sim:
                 "causes": [sum(CAUSE_BITS.get(c, 0) for c in n.causes) for n in ns],
                 "net": [self.net_state(n) if n.alive else 3 for n in ns],
             },
-            "links": links,
             "msgs": msgs,
             "events": self.events[-400:],
             "water": {"level_m": round(lvl, 3), "rev": self.world.rev},
             "metrics": {k: (round(v, 2) if isinstance(v, float) else v) for k, v in self.metrics.items()},
         }
+        if links is not None:
+            fr["links"] = links
         if self.focus is not None and 0 <= self.focus < self.n:
             fr["focus"] = self.focus_payload(ns[self.focus])
         self.events = []
         return fr
+
+    def links(self):
+        """Each live box's strongest neighbours as flat [a, b, margin_db, ...] (keeps frames small)."""
+        lim = self.cfg.snr_limit_db
+        seen = {}
+        for n in self.nodes:
+            if not n.alive:
+                continue
+            best = sorted(((nb["snr"], i) for i, nb in n.nbrs.items() if self.nodes[i].alive), reverse=True)
+            for snr, i in best[:LINKS_PER_NODE]:
+                key = (min(n.idx, i), max(n.idx, i))
+                seen[key] = max(seen.get(key, -99.0), snr)
+        out = []
+        for (a, b), snr in seen.items():
+            out += [a, b, round(snr - lim, 1)]
+        return out
 
     def focus_payload(self, n):
         s = n.sensors

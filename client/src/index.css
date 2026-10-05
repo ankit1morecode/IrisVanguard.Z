@@ -1,0 +1,165 @@
+@import "tailwindcss";
+
+/* Colour carries meaning, fixed everywhere (see the Architecture Dossier). Never reuse for decoration. */
+@theme {
+  --color-bg: #070d1a;
+  --color-panel: #0c1526;
+  --color-panel-2: #111d33;
+  --color-line: #1d2b45;
+  --color-ink: #e6edf7;
+  --color-mute: #8a9bb8;
+  --color-signal: #22d3ee;
+  --color-safe: #34d399;
+  --color-warn: #fbbf24;
+  --color-danger: #f43f5e;
+  --color-water: #3b82f6;
+  --color-violet: #a78bfa;
+  --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-display);
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #1d2b45 transparent;
+}
+
+.panel {
+  background: color-mix(in srgb, var(--color-panel) 86%, transparent);
+  border: 1px solid var(--color-line);
+  backdrop-filter: blur(10px);
+  border-radius: 14px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border-radius: 999px;
+  padding: 0.15rem 0.55rem;
+  font-size: 0.7rem;
+  font-family: var(--font-mono);
+  border: 1px solid var(--color-line);
+  background: var(--color-panel-2);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  border-radius: 10px;
+  padding: 0.5rem 0.9rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  border: 1px solid var(--color-line);
+  background: var(--color-panel-2);
+  transition: border-color 150ms, background 150ms, transform 150ms;
+  cursor: pointer;
+}
+.btn:hover {
+  border-color: #2f4670;
+}
+.btn:active {
+  transform: translateY(1px);
+}
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.btn-primary {
+  background: linear-gradient(135deg, #0891b2, #0e7490);
+  border-color: #22d3ee66;
+  color: white;
+}
+.btn-primary:hover {
+  border-color: #22d3ee;
+}
+.btn-danger {
+  background: #3b0a17;
+  border-color: #f43f5e66;
+  color: #fecdd3;
+}
+
+.label {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--color-mute);
+}
+
+.grid-bg {
+  background-image:
+    linear-gradient(to right, #ffffff08 1px, transparent 1px),
+    linear-gradient(to bottom, #ffffff08 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+input[type="range"].scrub {
+  appearance: none;
+  height: 6px;
+  border-radius: 999px;
+  background: #1d2b45;
+  outline: none;
+}
+input[type="range"].scrub::-webkit-slider-thumb {
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: var(--color-signal);
+  box-shadow: 0 0 0 4px #22d3ee33;
+  cursor: pointer;
+}
+input[type="range"].scrub::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--color-signal);
+  cursor: pointer;
+}
+
+select,
+input[type="number"] {
+  background: var(--color-panel-2);
+  border: 1px solid var(--color-line);
+  border-radius: 10px;
+  padding: 0.45rem 0.6rem;
+  color: var(--color-ink);
+  font-size: 0.85rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+@keyframes breathe {
+  0%, 100% { opacity: 0.55; transform: scale(0.92); }
+  50% { opacity: 1; transform: scale(1.06); }
+}
+.breathe {
+  animation: breathe 2.4s ease-in-out infinite;
+}

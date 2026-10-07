@@ -4,7 +4,8 @@ import { Bloom, EffectComposer, Vignette } from '@react-three/postprocessing'
 import { Suspense, useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import type { Frame, InitPayload } from '../lib/types'
-import { C, VSCALE } from '../lib/visual'
+import { C, SCENE_THEME, VSCALE } from '../lib/visual'
+import { useTheme } from '../lib/theme'
 import { currentFrame, linksAt, useRun, useRunStore } from '../store/runStore'
 import { Fx, type FxApi } from './Fx'
 import { Links } from './Links'
@@ -18,19 +19,22 @@ export function WorldScene({ compact = false }: { compact?: boolean }) {
   const init = useRun((s) => s.init)
   const frame = useRun(currentFrame)
   const ready = !!init && !!frame
+  // Materials bake theme colours at creation, so the canvas is rebuilt when the theme flips.
+  const theme = useTheme((s) => s.theme)
 
   return (
     <div className="relative h-full w-full">
       {!ready && (
         <div className="absolute inset-0 grid place-items-center">
           <div className="flex flex-col items-center gap-3 text-mute">
-            <div className="h-10 w-10 animate-spin rounded-full border-2 border-cyan-400/30 border-t-cyan-400" />
+            <div className="h-10 w-10 animate-spin rounded-full border-2 border-signal/30 border-t-cyan-400" />
             <span className="font-mono text-xs">waiting for the first frame…</span>
           </div>
         </div>
       )}
       {ready && (
         <Canvas
+          key={theme}
           dpr={compact ? [1, 1.25] : [1, 1.75]}
           camera={{ position: compact ? [0, 95, 105] : [0, 72, 92], fov: 42, near: 0.5, far: 600 }}
           gl={{ antialias: true, powerPreference: 'high-performance' }}
@@ -57,9 +61,9 @@ function SceneContents({ init, compact }: { init: InitPayload; compact: boolean 
   return (
     <>
       <color attach="background" args={[C.bg]} />
-      <fog attach="fog" args={[C.bg, 140, 330]} />
-      <ambientLight intensity={0.55} />
-      <hemisphereLight args={['#9ec5ff', '#0a1324', 0.6]} />
+      <fog attach="fog" args={[C.bg, ...SCENE_THEME.fog]} />
+      <ambientLight intensity={SCENE_THEME.light ? 0.9 : 0.55} />
+      <hemisphereLight args={[SCENE_THEME.light ? '#ffffff' : '#b9b0ff', SCENE_THEME.light ? '#c9c9d8' : '#101017', 0.6]} />
       <directionalLight position={[40, 80, 30]} intensity={1.1} />
       <group>
         <Terrain init={init} level={frame.water.level_m} />
@@ -80,8 +84,8 @@ function SceneContents({ init, compact }: { init: InitPayload; compact: boolean 
       <OrbitControls makeDefault enableDamping dampingFactor={0.08} maxPolarAngle={1.32} minDistance={18} maxDistance={220} target={[0, 0, 4]} />
       <Suspense fallback={null}>
         <EffectComposer multisampling={0}>
-          <Bloom mipmapBlur intensity={compact ? 0.7 : 0.95} luminanceThreshold={0.45} luminanceSmoothing={0.2} />
-          <Vignette eskil={false} offset={0.2} darkness={0.75} />
+          <Bloom mipmapBlur intensity={SCENE_THEME.bloom * (compact ? 0.75 : 1)} luminanceThreshold={0.45} luminanceSmoothing={0.2} />
+          <Vignette eskil={false} offset={0.2} darkness={SCENE_THEME.light ? 0.25 : 0.75} />
         </EffectComposer>
       </Suspense>
     </>
@@ -111,7 +115,7 @@ function useFxBridge(fx: React.RefObject<FxApi | null>, init: InitPayload) {
             case 'msg.copy': {
               nodePos(f, e.from as number, size, a)
               nodePos(f, e.to as number, size, b)
-              const color = e.evac ? C.danger : e.mode === 'send' ? '#7dd3fc' : C.signal
+              const color = e.evac ? C.danger : e.mode === 'send' ? C.signalSoft : C.signal
               api.travel(a, b, color, CLASS_DUR[classOf(e.key)] ?? 0.9)
               api.ripple(b, C.signal, 1.6, 0.7)
               break
@@ -129,7 +133,7 @@ function useFxBridge(fx: React.RefObject<FxApi | null>, init: InitPayload) {
             case 'msg.lost':
               nodePos(f, e.last_holder as number, size, a)
               api.ash(a)
-              api.ripple(a, '#64748b', 3, 2)
+              api.ripple(a, C.isolated, 3, 2)
               break
             case 'msg.created':
               api.ripple(nodePos(f, e.node as number, size, a), C.signal, 3, 1.1)
@@ -138,22 +142,22 @@ function useFxBridge(fx: React.RefObject<FxApi | null>, init: InitPayload) {
               if (e.on) api.ripple(nodePos(f, e.node as number, size, a), C.danger, 6, 1.3)
               break
             case 'node.dead':
-              api.ripple(nodePos(f, e.node as number, size, a), '#475569', 3.5, 1.6)
+              api.ripple(nodePos(f, e.node as number, size, a), C.dead, 3.5, 1.6)
               break
             case 'world.collapse': {
               const [x, y] = e.at as [number, number]
               a.set((x / size - 0.5) * 100, 1, (y / size - 0.5) * 100)
-              api.ripple(a, '#fb923c', ((e.radius as number) / size) * 100 * 1.4, 2.4)
+              api.ripple(a, C.collapse, ((e.radius as number) / size) * 100 * 1.4, 2.4)
               break
             }
             case 'reconcile':
               nodePos(f, e.a as number, size, a)
               nodePos(f, e.b as number, size, b)
-              api.travel(a, b, C.violet, 0.6)
-              api.travel(b, a, C.violet, 0.6)
+              api.travel(a, b, C.part, 0.6)
+              api.travel(b, a, C.part, 0.6)
               break
             case 'inject':
-              if (typeof e.node === 'number') api.ripple(nodePos(f, e.node, size, a), '#f472b6', 7, 1.6)
+              if (typeof e.node === 'number') api.ripple(nodePos(f, e.node, size, a), C.inject, 7, 1.6)
               break
           }
         }
@@ -195,7 +199,7 @@ function Constellation({ init, frame, msgKey }: { init: InitPayload; frame: Fram
   })
   if (!anchor) return null
   const status = row ? row[3] : 0
-  const color = status === 1 ? C.safe : status === 2 ? '#64748b' : C.signal
+  const color = status === 1 ? C.safe : status === 2 ? C.isolated : C.signal
   const holders = row ? row[5] : []
   return (
     <group>

@@ -7,11 +7,11 @@ export function SurvivalRing({ S, target, size = 44, status = 0, cls }: { S: num
   const r = size / 2 - 4
   const circ = 2 * Math.PI * r
   const met = status === 1 || S >= target
-  const color = status === 2 ? '#64748b' : met ? C.safe : C.signal
+  const color = status === 2 ? C.isolated : met ? C.safe : C.signal
   const ang = target * 2 * Math.PI - Math.PI / 2
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="shrink-0">
-      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#1d2b45" strokeWidth={4} />
+      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--line)" strokeWidth={4} />
       <circle
         cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth={4} strokeLinecap="round"
         strokeDasharray={`${Math.max(S, 0.001) * circ} ${circ}`} transform={`rotate(-90 ${size / 2} ${size / 2})`}
@@ -47,8 +47,8 @@ export function BatteryGlyph({ frac, reserveFrac, evacuating }: { frac: number; 
           <line x1="0" y1="0" x2="0" y2="4" stroke={evacuating ? C.danger : C.mute} strokeWidth="2" />
         </pattern>
       </defs>
-      <rect x={1} y={1} width={w} height={h - 2} rx={5} fill="#0b1324" stroke="#2b3d5e" />
-      <rect x={w + 1} y={h / 2 - 5} width={4} height={10} rx={1} fill="#2b3d5e" />
+      <rect x={1} y={1} width={w} height={h - 2} rx={5} fill="var(--sunken)" stroke="var(--line-strong)" />
+      <rect x={w + 1} y={h / 2 - 5} width={4} height={10} rx={1} fill="var(--line-strong)" />
       <rect x={4} y={4} width={fillW} height={h - 8} rx={3} fill={color} opacity={0.85} style={{ transition: 'width 400ms' }} />
       <rect x={4} y={4} width={Math.max(resW, 3)} height={h - 8} fill={`url(#hatch${id})`} opacity={evacuating ? 1 : 0.9} />
     </svg>
@@ -68,11 +68,11 @@ export function AirtimeHourglass({ used, allowance, owner }: { used: number; all
   const fenceY = h / 2 - 2 - ownerFrac * (h / 2 - 6)
   return (
     <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`}>
-      <path d={`M6 3 H${w - 6} L${w / 2 + 3} ${h / 2} L${w - 6} ${h - 3} H6 L${w / 2 - 3} ${h / 2} Z`} fill="#0b1324" stroke="#2b3d5e" />
+      <path d={`M6 3 H${w - 6} L${w / 2 + 3} ${h / 2} L${w - 6} ${h - 3} H6 L${w / 2 - 3} ${h / 2} Z`} fill="var(--sunken)" stroke="var(--line-strong)" />
       <clipPath id={`t${id}`}><path d={`M7 4 H${w - 7} L${w / 2} ${h / 2 - 1} Z`} /></clipPath>
       <clipPath id={`b${id}`}><path d={`M${w / 2} ${h / 2 + 1} L${w - 7} ${h - 4} H7 Z`} /></clipPath>
       <rect clipPath={`url(#t${id})`} x={0} y={h / 2 - 2 - top} width={w} height={top} fill={C.signal} opacity={0.75} />
-      <rect clipPath={`url(#b${id})`} x={0} y={h - 4 - bottom} width={w} height={bottom} fill={relayFull ? C.warn : '#155e75'} />
+      <rect clipPath={`url(#b${id})`} x={0} y={h - 4 - bottom} width={w} height={bottom} fill={relayFull ? C.warn : C.signalSoft} />
       <line x1={9} x2={w - 9} y1={fenceY} y2={fenceY} stroke={C.danger} strokeDasharray="2 2" />
     </svg>
   )
@@ -81,7 +81,7 @@ export function AirtimeHourglass({ used, allowance, owner }: { used: number; all
 export function Sparkline({ values, color = C.signal, height = 28, width = 140, min, max, threshold }: {
   values: number[]; color?: string; height?: number; width?: number; min?: number; max?: number; threshold?: number
 }) {
-  if (values.length < 2) return <div style={{ height, width }} className="rounded bg-[#0b1324]" />
+  if (values.length < 2) return <div style={{ height, width }} className="rounded bg-sunken" />
   const lo = min ?? Math.min(...values)
   const hi = max ?? Math.max(...values)
   const span = hi - lo || 1
@@ -113,7 +113,7 @@ export function GateChips({ failed }: { failed: string[] }) {
           <span
             key={id}
             title={`${label}: ${bad ? 'blocked' : 'ok'}`}
-            className={`grid h-6 w-6 place-items-center rounded-md border ${bad ? 'border-rose-500/70 bg-rose-500/15 text-rose-300' : 'border-emerald-500/30 bg-emerald-500/5 text-emerald-300/80'}`}
+            className={`grid h-6 w-6 place-items-center rounded-md border ${bad ? 'border-danger/70 bg-danger/15 text-danger' : 'border-safe/30 bg-safe/5 text-safe/80'}`}
           >
             <Icon size={13} />
           </span>
@@ -127,7 +127,7 @@ export function HaloDot({ color, pulse = false, size = 14 }: { color: string; pu
   return (
     <span className="relative inline-grid place-items-center" style={{ width: size, height: size }}>
       <span className={`absolute inset-0 rounded-full border-2 ${pulse ? 'breathe' : ''}`} style={{ borderColor: color, boxShadow: `0 0 8px ${color}` }} />
-      <span className="h-1.5 w-1.5 rounded-sm" style={{ background: '#c9d6ea' }} />
+      <span className="h-1.5 w-1.5 rounded-sm" style={{ background: 'var(--ink)' }} />
     </span>
   )
 }

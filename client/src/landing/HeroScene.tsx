@@ -3,7 +3,7 @@ import { Canvas, useFrame } from '@react-three/fiber'
 import { Bloom, EffectComposer } from '@react-three/postprocessing'
 import { useMemo, useRef } from 'react'
 import * as THREE from 'three'
-import { C } from '../lib/visual'
+import { C, SCENE_THEME, glowBlending } from '../lib/visual'
 
 /**
  * The idea in one loop (10 s): a calm household box; the flood rises and it starts to sink, its halo
@@ -25,21 +25,29 @@ const waterVert = /* glsl */ `
 `
 const waterFrag = /* glsl */ `
   uniform float uTime;
+  uniform vec3 uNear;
+  uniform vec3 uFar;
+  uniform vec3 uLine;
   varying vec3 vW;
   void main() {
     float d = length(vW.xz) / 60.0;
     float grid = 1.0 - smoothstep(0.0, 0.06, abs(fract(vW.x / 4.0) - 0.5) * abs(fract(vW.z / 4.0) - 0.5) * 8.0);
-    vec3 col = mix(vec3(0.05, 0.16, 0.38), vec3(0.02, 0.05, 0.12), clamp(d, 0.0, 1.0));
-    col += vec3(0.1, 0.4, 0.7) * grid * 0.12 * (1.0 - d);
+    vec3 col = mix(uNear, uFar, clamp(d, 0.0, 1.0));
+    col = mix(col, uLine, grid * 0.18 * (1.0 - d));
     float sheen = pow(max(sin(vW.x * 0.2 + uTime * 0.6) * cos(vW.z * 0.25 - uTime * 0.4), 0.0), 6.0);
-    col += vec3(0.3, 0.6, 1.0) * sheen * 0.25;
+    col += uLine * sheen * 0.2;
     gl_FragColor = vec4(col, 0.92);
     #include <colorspace_fragment>
   }
 `
 
 function Water() {
-  const mat = useMemo(() => new THREE.ShaderMaterial({ vertexShader: waterVert, fragmentShader: waterFrag, uniforms: { uTime: { value: 0 } }, transparent: true }), [])
+  const mat = useMemo(() => new THREE.ShaderMaterial({ vertexShader: waterVert, fragmentShader: waterFrag, uniforms: {
+    uTime: { value: 0 },
+    uNear: { value: new THREE.Vector3(...(SCENE_THEME.light ? [0.62, 0.74, 0.98] : [0.08, 0.1, 0.3])) },
+    uFar: { value: new THREE.Vector3(...(SCENE_THEME.light ? [0.95, 0.95, 0.99] : [0.04, 0.04, 0.08])) },
+    uLine: { value: new THREE.Vector3(...(SCENE_THEME.light ? [0.36, 0.29, 0.86] : [0.55, 0.48, 1.0])) },
+  }, transparent: true }), [])
   useFrame((_, dt) => { mat.uniforms.uTime.value += dt })
   return (
     <mesh rotation={[-Math.PI / 2, 0, 0]} material={mat}>
@@ -75,9 +83,9 @@ function Story() {
       const s = (2.4 - danger * 1.1) * (1 + 0.15 * Math.sin(clock.elapsedTime * Math.PI * 2 * hz))
       halo.current.scale.setScalar(t > 7.4 ? 0.001 : s)
       halo.current.position.set(BOX.x, 0.25, BOX.z)
-      col.set(C.ink).lerp(new THREE.Color(C.warn), Math.min(danger * 2, 1))
+      col.set(SCENE_THEME.light ? C.mute : C.ink).lerp(new THREE.Color(C.warn), Math.min(danger * 2, 1))
       if (danger > 0.5) col.lerp(new THREE.Color(C.danger), (danger - 0.5) * 2)
-      ;(halo.current.material as THREE.MeshBasicMaterial).color.copy(col).multiplyScalar(1.6)
+      ;(halo.current.material as THREE.MeshBasicMaterial).color.copy(col).multiplyScalar(SCENE_THEME.light ? 1 : 1.6)
     }
     // Evacuation: four messages leave in quick succession along arcs to the relay.
     sparks.current.forEach((m, k) => {
@@ -97,14 +105,14 @@ function Story() {
     }
     if (relayHalo.current) {
       const glow = THREE.MathUtils.smoothstep(t, 5.0, 5.6) * (1 - THREE.MathUtils.smoothstep(t, 6.6, 8))
-      ;(relayHalo.current.material as THREE.MeshBasicMaterial).color.set(C.signal).multiplyScalar(0.6 + glow * 2)
+      ;(relayHalo.current.material as THREE.MeshBasicMaterial).color.set(C.signal).multiplyScalar(SCENE_THEME.light ? 1 : 0.6 + glow * 2)
       relayHalo.current.scale.setScalar(2.6 + glow * 0.8)
     }
     if (ripple.current) {
       const u = THREE.MathUtils.clamp((t - 7.4) / 1.8, 0, 1)
       ripple.current.visible = u > 0 && u < 1
       ripple.current.scale.setScalar(1 + u * 30)
-      ;(ripple.current.material as THREE.MeshBasicMaterial).color.set(C.safe).multiplyScalar(1.6 * (1 - u))
+      ;(ripple.current.material as THREE.MeshBasicMaterial).color.set(C.safe).lerp(new THREE.Color(SCENE_THEME.light ? C.bg : '#000000'), u)
     }
   })
 
@@ -114,7 +122,7 @@ function Story() {
       <group ref={box}>
         <mesh>
           <boxGeometry args={[1.4, 1.1, 1.4]} />
-          <meshStandardMaterial color="#d7e3f3" emissive="#0f2b3d" roughness={0.4} />
+          <meshStandardMaterial color={C.body} roughness={0.4} />
         </mesh>
         <mesh position={[0, 0.65, 0]}>
           <cylinderGeometry args={[0.95, 0.95, 0.18, 20]} />
@@ -122,7 +130,7 @@ function Story() {
         </mesh>
         <mesh position={[0.4, 1.6, 0.4]}>
           <cylinderGeometry args={[0.04, 0.04, 1.9, 6]} />
-          <meshStandardMaterial color="#cbd5e1" />
+          <meshStandardMaterial color={SCENE_THEME.light ? "#6b6b80" : "#cbd5e1"} />
         </mesh>
         <mesh position={[-0.2, 0.62, -0.2]}>
           <cylinderGeometry args={[0.28, 0.28, 0.12, 16]} />
@@ -131,7 +139,7 @@ function Story() {
       </group>
       <mesh ref={halo} rotation={[-Math.PI / 2, 0, 0]}>
         <ringGeometry args={[0.85, 1, 64]} />
-        <meshBasicMaterial transparent blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} />
+        <meshBasicMaterial transparent blending={glowBlending()} depthWrite={false} toneMapped={false} />
       </mesh>
       {[0, 1, 2, 3].map((k) => (
         <mesh key={k} ref={(m) => { if (m) sparks.current[k] = m }} visible={false}>
@@ -143,7 +151,7 @@ function Story() {
       {/* rooftop relay: a building with a solar panel and mast */}
       <mesh position={[RELAY.x, 2.6, RELAY.z]}>
         <boxGeometry args={[4, 5.6, 4]} />
-        <meshStandardMaterial color="#14243b" emissive="#06121f" />
+        <meshStandardMaterial color={SCENE_THEME.light ? '#d4d4e2' : '#1d1d2a'} />
       </mesh>
       <mesh position={[RELAY.x - 0.8, 5.55, RELAY.z]} rotation={[-0.4, 0, 0]}>
         <boxGeometry args={[1.8, 0.08, 1.2]} />
@@ -151,11 +159,11 @@ function Story() {
       </mesh>
       <mesh position={[RELAY.x + 0.8, 6.3, RELAY.z]}>
         <cylinderGeometry args={[0.25, 0.35, 1.6, 8]} />
-        <meshStandardMaterial color="#cbd5e1" emissive="#0b3b2f" />
+        <meshStandardMaterial color={SCENE_THEME.light ? '#9b9bb0' : '#cbd5e1'} />
       </mesh>
       <mesh ref={relayHalo} position={[RELAY.x, 5.45, RELAY.z]} rotation={[-Math.PI / 2, 0, 0]}>
         <ringGeometry args={[0.85, 1, 64]} />
-        <meshBasicMaterial transparent blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} />
+        <meshBasicMaterial transparent blending={glowBlending()} depthWrite={false} toneMapped={false} />
       </mesh>
       <mesh ref={relaySparks} visible={false}>
         <sphereGeometry args={[0.28, 12, 12]} />
@@ -165,7 +173,7 @@ function Story() {
       {/* control-room gateway on high ground */}
       <mesh position={[GATEWAY.x, GATEWAY.y / 2 - 1, GATEWAY.z]}>
         <cylinderGeometry args={[0.6, 2.2, GATEWAY.y, 6]} />
-        <meshStandardMaterial color="#1f3b4d" metalness={0.6} roughness={0.3} />
+        <meshStandardMaterial color={SCENE_THEME.light ? '#4b4b63' : '#2a2a3d'} metalness={0.6} roughness={0.3} />
       </mesh>
       <mesh position={[GATEWAY.x, GATEWAY.y + 0.4, GATEWAY.z]}>
         <sphereGeometry args={[0.5, 16, 16]} />
@@ -173,7 +181,7 @@ function Story() {
       </mesh>
       <mesh ref={ripple} position={[GATEWAY.x, 0.3, GATEWAY.z]} rotation={[-Math.PI / 2, 0, 0]} visible={false}>
         <ringGeometry args={[0.9, 1, 96]} />
-        <meshBasicMaterial transparent blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} />
+        <meshBasicMaterial transparent blending={glowBlending()} depthWrite={false} toneMapped={false} />
       </mesh>
     </group>
   )
@@ -202,17 +210,17 @@ function Neighbours() {
   return (
     <group>
       <lineSegments geometry={lines}>
-        <lineBasicMaterial color="#38bdf8" transparent opacity={0.16} blending={THREE.AdditiveBlending} depthWrite={false} />
+        <lineBasicMaterial color={C.link} transparent opacity={SCENE_THEME.light ? 0.3 : 0.2} blending={glowBlending()} depthWrite={false} />
       </lineSegments>
       {pts.map((p, k) => (
         <Float key={k} speed={1.2} rotationIntensity={0.15} floatIntensity={0.25}>
           <mesh position={[p.x, 0.35, p.z]}>
             <boxGeometry args={[0.8, 0.6, 0.8]} />
-            <meshStandardMaterial color="#c9d6ea" emissive="#0e2a3a" />
+            <meshStandardMaterial color={C.body} />
           </mesh>
           <mesh ref={(m) => { if (m) halos.current[k] = m }} position={[p.x, 0.12, p.z]} rotation={[-Math.PI / 2, 0, 0]}>
             <ringGeometry args={[0.85, 1, 48]} />
-            <meshBasicMaterial color={new THREE.Color(C.ink).multiplyScalar(0.9)} transparent blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} />
+            <meshBasicMaterial color={SCENE_THEME.light ? C.mute : new THREE.Color(C.ink).multiplyScalar(0.9)} transparent opacity={SCENE_THEME.light ? 0.6 : 1} blending={glowBlending()} depthWrite={false} toneMapped={false} />
           </mesh>
         </Float>
       ))}
@@ -225,15 +233,15 @@ export function HeroScene() {
     <Canvas dpr={[1, 1.75]} camera={{ position: [-18, 13, 24], fov: 45 }} gl={{ antialias: true }}>
       <color attach="background" args={[C.bg]} />
       <fog attach="fog" args={[C.bg, 30, 95]} />
-      <ambientLight intensity={0.5} />
+      <ambientLight intensity={SCENE_THEME.light ? 0.9 : 0.5} />
       <directionalLight position={[10, 20, 10]} intensity={1.2} />
-      <Stars radius={120} depth={40} count={1500} factor={3} fade speed={0.5} />
+      {!SCENE_THEME.light && <Stars radius={120} depth={40} count={1500} factor={3} fade speed={0.5} />}
       <Water />
       <Neighbours />
       <Story />
       <OrbitControls enableZoom={false} enablePan={false} autoRotate autoRotateSpeed={0.35} maxPolarAngle={1.35} minPolarAngle={0.6} target={[2, 1, -2]} />
       <EffectComposer multisampling={0}>
-        <Bloom mipmapBlur intensity={1.1} luminanceThreshold={0.3} />
+        <Bloom mipmapBlur intensity={SCENE_THEME.light ? 0.15 : 1.0} luminanceThreshold={SCENE_THEME.light ? 0.9 : 0.3} />
       </EffectComposer>
     </Canvas>
   )

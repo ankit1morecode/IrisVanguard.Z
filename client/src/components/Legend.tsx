@@ -2,14 +2,16 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { glyphTexture } from '../three/glyphs'
 import { C, NET_COLORS } from '../lib/visual'
+import { useTheme } from '../lib/theme'
 import { HaloDot } from './glyphs'
 
 function GlyphImg({ cause }: { cause: string }) {
   const ref = useRef<HTMLImageElement>(null)
+  const theme = useTheme((s) => s.theme)
   useEffect(() => {
     const img = glyphTexture(cause).image as HTMLCanvasElement
     if (ref.current) ref.current.src = img.toDataURL()
-  }, [cause])
+  }, [cause, theme])
   return <img ref={ref} alt={cause} className="h-4 w-4" />
 }
 
@@ -17,7 +19,7 @@ function Row({ icon, label, hint }: { icon: React.ReactNode; label: string; hint
   return (
     <div className="flex items-center gap-2.5 py-1" title={hint}>
       <span className="grid w-6 shrink-0 place-items-center">{icon}</span>
-      <span className="text-xs leading-tight text-slate-300">{label}</span>
+      <span className="text-xs leading-tight text-ink/80">{label}</span>
     </div>
   )
 }
@@ -37,7 +39,7 @@ export function Legend() {
 
   if (!open) {
     return (
-      <button className="panel flex items-center gap-1 px-2 py-3 text-xs text-mute hover:text-white" onClick={() => setOpen(true)} aria-label="Show legend">
+      <button className="panel flex items-center gap-1 px-2 py-3 text-xs text-mute hover:text-ink" onClick={() => setOpen(true)} aria-label="Show legend">
         <ChevronRight size={14} />
         <span className="[writing-mode:vertical-rl]">Legend</span>
       </button>
@@ -47,7 +49,7 @@ export function Legend() {
     <div className="panel flex max-h-full w-56 flex-col overflow-hidden">
       <div className="flex items-center justify-between px-3 pt-3">
         <span className="label">Visual language</span>
-        <button className="text-mute hover:text-white" onClick={() => setOpen(false)} aria-label="Hide legend"><ChevronLeft size={16} /></button>
+        <button className="text-mute hover:text-ink" onClick={() => setOpen(false)} aria-label="Hide legend"><ChevronLeft size={16} /></button>
       </div>
       <div className="overflow-y-auto px-3 pb-3">
         <div className="mt-2 text-[10px] uppercase tracking-wider text-mute">Box health (halo)</div>
@@ -57,11 +59,11 @@ export function Legend() {
 
         <div className="mt-3 text-[10px] uppercase tracking-wider text-mute">Messages</div>
         <Row icon={<Dot color={C.signal} />} label="Copy forwarded toward the control room" />
-        <Row icon={<Dot color="#7dd3fc" />} label="Survival copy (until target met)" />
+        <Row icon={<Dot color={C.signalSoft} />} label="Survival copy (until target met)" />
         <Row icon={<Dot color={C.danger} />} label="Evacuation: dying box hands off" />
         <Row icon={<span className="h-3 w-3 rounded-full border-2" style={{ borderColor: C.safe }} />} label="Green ripple: delivered / confirmed" />
-        <Row icon={<Dot color="#94a3b8" glow={false} />} label="Grey ash: message lost with its box" />
-        <Row icon={<Dot color={C.violet} />} label="Digest exchange with a boat" />
+        <Row icon={<Dot color={C.ash} glow={false} />} label="Grey ash: message lost with its box" />
+        <Row icon={<Dot color={C.part} />} label="Digest exchange with a boat" />
 
         <div className="mt-3 text-[10px] uppercase tracking-wider text-mute">Hazard sensed</div>
         <div className="grid grid-cols-2">
@@ -79,14 +81,14 @@ export function Legend() {
             <Row key={s} icon={<span className="h-3 w-3 rounded-full opacity-70" style={{ background: NET_COLORS[i] }} />} label={s} />
           ))}
         </div>
-        <Row icon={<span className="h-0.5 w-5 bg-sky-400" />} label="Radio link (brighter = stronger)" />
-        <Row icon={<span className="h-0.5 w-5 bg-amber-400/60" />} label="Link below safety margin" />
+        <Row icon={<span className="h-0.5 w-5 bg-signal" />} label="Radio link (brighter = stronger)" />
+        <Row icon={<span className="h-0.5 w-5 bg-warn/60" />} label="Link below safety margin" />
 
         <div className="mt-3 text-[10px] uppercase tracking-wider text-mute">Boxes</div>
-        <Row icon={<span className="h-2.5 w-2.5 bg-slate-200" />} label="Household box" />
-        <Row icon={<span className="h-4 w-1.5 rounded-sm bg-slate-200" />} label="Rooftop relay (solar)" />
-        <Row icon={<span className="h-4 w-2 rounded-t-full bg-emerald-400/80" />} label="Control-room gateway" />
-        <Row icon={<span className="h-2 w-4 rounded-sm bg-amber-500" />} label="Rescue boat (carries messages)" />
+        <Row icon={<span className="h-2.5 w-2.5 bg-ink/70" />} label="Household box" />
+        <Row icon={<span className="h-4 w-1.5 rounded-sm bg-ink/70" />} label="Rooftop relay (solar)" />
+        <Row icon={<span className="h-4 w-2 rounded-t-full bg-safe/80" />} label="Control-room gateway" />
+        <Row icon={<span className="h-2 w-4 rounded-sm bg-warn" />} label="Rescue boat (carries messages)" />
       </div>
     </div>
   )

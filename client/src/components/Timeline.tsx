@@ -31,7 +31,7 @@ export function SurvivalRiver({ frames, width, height, cursor }: { frames: Frame
     <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" className="block">
       <path d={paths.delivered} fill={C.safe} opacity={0.55} />
       <path d={paths.alive} fill={C.signal} opacity={0.35} />
-      <path d={paths.lost} fill="#64748b" opacity={0.6} />
+      <path d={paths.lost} fill={C.isolated} opacity={0.6} />
       {cursor !== undefined && <line x1={cursor * width} x2={cursor * width} y1={0} y2={height} stroke={C.ink} strokeOpacity={0.7} vectorEffect="non-scaling-stroke" />}
     </svg>
   )
@@ -85,8 +85,8 @@ export function Timeline() {
   }
 
   return (
-    <div className="panel flex flex-col gap-2 px-4 py-3">
-      <div className="relative h-10 w-full overflow-hidden rounded-md bg-[#0a1222]">
+    <div className="panel flex flex-col gap-2 px-3 py-2.5 sm:px-4 sm:py-3">
+      <div className="relative h-10 w-full overflow-hidden rounded-md bg-sunken">
         <SurvivalRiver frames={frames} width={1000} height={40} cursor={last > 0 ? idx / last : 1} />
       </div>
       <div className="flex flex-wrap items-center gap-3">
@@ -99,7 +99,7 @@ export function Timeline() {
           </button>
         )}
         <div className="font-mono text-sm tabular-nums">
-          <span className="text-white">T+{fmtClock(tick)}</span>
+          <span className="text-ink">T+{fmtClock(tick)}</span>
           <span className="text-mute"> / {fmtClock(duration)}</span>
         </div>
         <select
@@ -114,7 +114,7 @@ export function Timeline() {
         >
           {SPEEDS.map((s) => <option key={s} value={s}>{s}×</option>)}
         </select>
-        <div className="relative min-w-[200px] flex-1">
+        <div className="relative order-last w-full sm:order-none sm:w-auto sm:min-w-[200px] sm:flex-1">
           <div className="pointer-events-none absolute inset-x-0 -top-2 h-2">
             {last > 0 && markers.map((m, k) => (
               <span
@@ -122,7 +122,7 @@ export function Timeline() {
                 className="absolute top-0 h-2 w-[2px] rounded"
                 style={{
                   left: `${(m.i / last) * 100}%`,
-                  background: m.kind === 'evac' ? C.danger : m.kind === 'collapse' ? '#fb923c' : '#94a3b8',
+                  background: m.kind === 'evac' ? C.danger : m.kind === 'collapse' ? C.collapse : C.ash,
                   opacity: 0.8,
                 }}
               />
@@ -143,13 +143,13 @@ export function Timeline() {
         </div>
         {mode === 'live' && (
           <button
-            className={`chip !py-1 ${live ? 'border-rose-500/50 text-rose-300' : 'text-mute hover:text-white'}`}
+            className={`chip !py-1 ${live ? 'border-danger/50 text-danger' : 'text-mute hover:text-ink'}`}
             onClick={() => store.setState({ view: null })}
           >
             <Radio size={12} className={live && !paused && !ended ? 'breathe' : ''} /> {ended ? 'END' : 'LIVE'}
           </button>
         )}
-        {mode === 'replay' && <span className="chip text-violet-300">REPLAY</span>}
+        {mode === 'replay' && <span className="chip text-signal">REPLAY</span>}
       </div>
     </div>
   )

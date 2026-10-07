@@ -41,7 +41,7 @@ export function ScenarioPicker({ mode, onLaunch, busy }: { mode: 'single' | 'com
 
   return (
     <div className="mx-auto w-full max-w-5xl">
-      {err && <div className="panel mb-4 border-rose-500/40 p-3 text-sm text-rose-200">{err}</div>}
+      {err && <div className="panel mb-4 border-danger/40 p-3 text-sm text-danger">{err}</div>}
       <div className="label mb-2">1 · Choose a disaster</div>
       <div className="grid gap-3 md:grid-cols-3">
         {scenarios.map((s, k) => {
@@ -54,10 +54,10 @@ export function ScenarioPicker({ mode, onLaunch, busy }: { mode: 'single' | 'com
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: k * 0.06 }}
               onClick={() => setScenario(s.name)}
-              className={`panel group relative flex flex-col gap-2 p-4 text-left transition ${active ? '!border-cyan-400/70 shadow-[0_0_30px_-10px_#22d3ee]' : 'hover:!border-[#2f4670]'}`}
+              className={`panel group relative flex flex-col gap-2 p-4 text-left transition ${active ? '!border-signal/70 shadow-[0_0_30px_-10px_var(--signal)]' : 'hover:!border-line-strong'}`}
             >
               <div className="flex items-center gap-2">
-                <span className={`grid h-9 w-9 place-items-center rounded-lg ${active ? 'bg-cyan-400/15 text-cyan-300' : 'bg-white/5 text-mute'}`}><Icon size={18} /></span>
+                <span className={`grid h-9 w-9 place-items-center rounded-lg ${active ? 'bg-signal/15 text-signal' : 'bg-ink/5 text-mute'}`}><Icon size={18} /></span>
                 <span className="font-semibold">{s.title}</span>
               </div>
               <p className="text-xs leading-relaxed text-mute">{s.description}</p>
@@ -78,7 +78,7 @@ export function ScenarioPicker({ mode, onLaunch, busy }: { mode: 'single' | 'com
         {strategies.map((s) => {
           const on = chosen.includes(s.id)
           return (
-            <button key={s.id} onClick={() => toggle(s.id)} className={`btn !text-xs ${on ? '!border-cyan-400/70 !bg-cyan-400/10 text-cyan-100' : 'text-mute'}`}>
+            <button key={s.id} onClick={() => toggle(s.id)} className={`btn !text-xs ${on ? '!border-signal/70 !bg-signal/10 text-signal' : 'text-mute'}`}>
               {on && <Check size={13} />} {s.label}
             </button>
           )

@@ -2,7 +2,7 @@ import { useFrame } from '@react-three/fiber'
 import { useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import type { InitPayload } from '../lib/types'
-import { SCENE, VSCALE } from '../lib/visual'
+import { SCENE, SCENE_THEME, VSCALE } from '../lib/visual'
 
 /** Elevation packed into an 8-bit texture so the water shader can find its own shoreline. */
 export function useElevationTexture(init: InitPayload) {
@@ -44,27 +44,36 @@ const terrainVert = /* glsl */ `
 
 const terrainFrag = /* glsl */ `
   uniform float uLevel;
+  uniform vec3 uBed;
+  uniform vec3 uLow;
+  uniform vec3 uMid;
+  uniform vec3 uHigh;
+  uniform vec3 uContour;
+  uniform float uContourA;
+  uniform vec3 uGrid;
+  uniform float uGridA;
+  uniform float uLight;
   varying float vH;
   varying vec3 vN;
   varying vec3 vW;
   void main() {
-    vec3 bed = vec3(0.035, 0.07, 0.13);
-    vec3 low = vec3(0.07, 0.17, 0.19);
-    vec3 mid = vec3(0.09, 0.15, 0.22);
-    vec3 high = vec3(0.16, 0.21, 0.30);
-    vec3 col = vH < 0.0 ? bed : mix(low, mid, smoothstep(0.0, 4.0, vH));
-    col = mix(col, high, smoothstep(4.0, 10.0, vH));
+    vec3 col = vH < 0.0 ? uBed : mix(uLow, uMid, smoothstep(0.0, 4.0, vH));
+    col = mix(col, uHigh, smoothstep(4.0, 10.0, vH));
     float light = clamp(dot(normalize(vN), normalize(vec3(0.4, 1.0, 0.3))), 0.0, 1.0);
-    col *= 0.55 + 0.75 * light;
+    col *= mix(0.55 + 0.75 * light, 0.8 + 0.25 * light, uLight);
     // 1 m contour lines
     float f = fract(vH);
     float d = min(f, 1.0 - f) / max(fwidth(vH), 1e-4);
-    col += vec3(0.13, 0.55, 0.65) * (1.0 - clamp(d, 0.0, 1.0)) * 0.22;
+    // fade contours where they crowd closer than a few pixels (steep or distant slopes)
+    float sparse = clamp(1.0 - fwidth(vH) * 4.0, 0.0, 1.0);
+    col = mix(col, uContour, (1.0 - clamp(d, 0.0, 1.0)) * uContourA * sparse);
     // 10-unit operations grid
     vec2 g = abs(fract(vW.xz / 10.0 - 0.5) - 0.5) / fwidth(vW.xz / 10.0);
-    col += vec3(0.25, 0.4, 0.6) * (1.0 - clamp(min(g.x, g.y), 0.0, 1.0)) * 0.06;
+    vec2 gw = fwidth(vW.xz / 10.0);
+    float gridSparse = clamp(1.0 - max(gw.x, gw.y) * 6.0, 0.0, 1.0);
+    col = mix(col, uGrid, (1.0 - clamp(min(g.x, g.y), 0.0, 1.0)) * uGridA * gridSparse);
     // wet ground under the flood darkens
-    col *= vH < uLevel ? 0.7 : 1.0;
+    col *= vH < uLevel ? mix(0.7, 0.88, uLight) : 1.0;
     gl_FragColor = vec4(col, 1.0);
     #include <colorspace_fragment>
   }
@@ -85,7 +94,14 @@ export function Terrain({ init, level }: { init: InitPayload; level: number }) {
     () => new THREE.ShaderMaterial({
       vertexShader: terrainVert,
       fragmentShader: terrainFrag,
-      uniforms: { uVScale: { value: VSCALE }, uLevel: { value: 0 } },
+      uniforms: {
+        uVScale: { value: VSCALE }, uLevel: { value: 0 },
+        uBed: { value: new THREE.Vector3(...SCENE_THEME.bed) }, uLow: { value: new THREE.Vector3(...SCENE_THEME.low) },
+        uMid: { value: new THREE.Vector3(...SCENE_THEME.mid) }, uHigh: { value: new THREE.Vector3(...SCENE_THEME.high) },
+        uContour: { value: new THREE.Vector3(...SCENE_THEME.contour) }, uContourA: { value: SCENE_THEME.contourAlpha },
+        uGrid: { value: new THREE.Vector3(...SCENE_THEME.grid) }, uGridA: { value: SCENE_THEME.gridAlpha },
+        uLight: { value: SCENE_THEME.light ? 1 : 0 },
+      },
     }),
     [],
   )
@@ -97,7 +113,7 @@ export function Terrain({ init, level }: { init: InitPayload; level: number }) {
       {/* skirt so the island of terrain reads as a physical tabletop model */}
       <mesh position={[0, -3.2, 0]}>
         <boxGeometry args={[SCENE, 6, SCENE]} />
-        <meshBasicMaterial color="#0a1324" />
+        <meshBasicMaterial color={SCENE_THEME.skirt} />
       </mesh>
     </group>
   )
@@ -121,6 +137,9 @@ const waterFrag = /* glsl */ `
   uniform float uN;
   uniform float uLevel;
   uniform float uTime;
+  uniform vec3 uShallow;
+  uniform vec3 uDeep;
+  uniform vec3 uFoam;
   varying vec2 vUv;
   varying vec3 vW;
   void main() {
@@ -130,12 +149,10 @@ const waterFrag = /* glsl */ `
     if (depth <= 0.0) discard;
     float ripple = sin(vW.x * 0.9 + uTime * 1.3) * sin(vW.z * 0.7 - uTime * 1.1)
                  + 0.5 * sin((vW.x + vW.z) * 2.1 + uTime * 2.0);
-    vec3 shallow = vec3(0.16, 0.45, 0.85);
-    vec3 deep = vec3(0.04, 0.12, 0.38);
-    vec3 col = mix(shallow, deep, smoothstep(0.0, 3.0, depth));
-    col += vec3(0.25, 0.5, 0.9) * ripple * 0.06;
+    vec3 col = mix(uShallow, uDeep, smoothstep(0.0, 3.0, depth));
+    col += uShallow * ripple * 0.07;
     float foam = 1.0 - smoothstep(0.0, 0.18, depth);
-    col = mix(col, vec3(0.75, 0.9, 1.0), foam * 0.55);
+    col = mix(col, uFoam, foam * 0.55);
     float alpha = mix(0.5, 0.82, smoothstep(0.0, 2.0, depth)) + foam * 0.15;
     gl_FragColor = vec4(col, alpha);
     #include <colorspace_fragment>
@@ -154,6 +171,8 @@ export function Water({ init, level }: { init: InitPayload; level: number }) {
       uniforms: {
         uElev: { value: tex }, uMin: { value: min }, uMax: { value: max }, uN: { value: n },
         uLevel: { value: level }, uTime: { value: 0 },
+        uShallow: { value: new THREE.Vector3(...SCENE_THEME.shallow) }, uDeep: { value: new THREE.Vector3(...SCENE_THEME.deep) },
+        uFoam: { value: new THREE.Vector3(...SCENE_THEME.foam) },
       },
     }),
     [tex, min, max, n], // eslint-disable-line react-hooks/exhaustive-deps

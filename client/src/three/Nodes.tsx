@@ -3,7 +3,7 @@ import { useFrame, type ThreeEvent } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import type { Frame, InitPayload } from '../lib/types'
-import { C, NET_COLORS, VSCALE, fmtTau, prefersReducedMotion, tauColor, tauPulseHz, toScene } from '../lib/visual'
+import { C, NET_COLORS, SCENE_THEME, VSCALE, fmtTau, glowBlending, prefersReducedMotion, tauColor, tauPulseHz, toScene } from '../lib/visual'
 import { glyphTexture, primaryCause } from './glyphs'
 import { useInstanceColors } from './instancing'
 
@@ -73,7 +73,7 @@ export function Nodes({ init, frame, selected, hovered, onPick, onHover, compact
         tmpS.set(1, dead ? 0.3 : 1, 1)
         tmpM.compose(tmpP, tmpQ.identity(), tmpS)
         mesh.setMatrixAt(k, tmpM)
-        mesh.setColorAt(k, tmpC.set(dead ? C.dead : st[i] === 2 ? C.danger : st[i] === 1 ? C.warn : '#c9d6ea'))
+        mesh.setColorAt(k, tmpC.set(dead ? C.dead : st[i] === 2 ? C.danger : st[i] === 1 ? C.warn : C.body))
       })
       mesh.instanceMatrix.needsUpdate = true
       if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true
@@ -90,7 +90,7 @@ export function Nodes({ init, frame, selected, hovered, onPick, onHover, compact
         tmpQ.setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2)
         tmpM.compose(tmpP, tmpQ, tmpS)
         discs.current.setMatrixAt(i, tmpM)
-        discs.current.setColorAt(i, tmpC.set(NET_COLORS[frame.nodes.net[i]] || C.mute).multiplyScalar(0.035))
+        discs.current.setColorAt(i, tmpC.set(NET_COLORS[frame.nodes.net[i]] || C.mute).multiplyScalar(SCENE_THEME.light ? 1 : 0.035))
       }
       discs.current.instanceMatrix.needsUpdate = true
       if (discs.current.instanceColor) discs.current.instanceColor.needsUpdate = true
@@ -133,7 +133,8 @@ export function Nodes({ init, frame, selected, hovered, onPick, onHover, compact
       else tauColor(tau[i], tmpC, init.cfg.evac_tau_s)
       const st = state[i]
       const flash = state[i] === 2 && !reduced ? 0.6 + 0.6 * Math.abs(Math.sin(t * 9)) : 1
-      tmpC.multiplyScalar((i === selected ? 1.6 : i === hovered ? 1.2 : st === 0 ? 0.32 : 0.75) * flash)
+      if (SCENE_THEME.light) tmpC.multiplyScalar(i === selected || i === hovered ? 0.8 : flash < 1 ? 0.85 : 1)
+      else tmpC.multiplyScalar((i === selected ? 1.6 : i === hovered ? 1.2 : st === 0 ? 0.32 : 0.75) * flash)
       mesh.setColorAt(i, tmpC)
     }
     mesh.instanceMatrix.needsUpdate = true
@@ -153,12 +154,12 @@ export function Nodes({ init, frame, selected, hovered, onPick, onHover, compact
     <group>
       <instancedMesh ref={discs} args={[undefined, undefined, n]} renderOrder={1} frustumCulled={false}>
         <circleGeometry args={[1, 32]} />
-        <meshBasicMaterial transparent blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} />
+        <meshBasicMaterial transparent opacity={SCENE_THEME.light ? 0.06 : 1} blending={glowBlending()} depthWrite={false} toneMapped={false} />
       </instancedMesh>
 
       <instancedMesh ref={halos} args={[undefined, undefined, n]} renderOrder={3} frustumCulled={false}>
         <ringGeometry args={[0.82, 1, 48]} />
-        <meshBasicMaterial transparent blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} />
+        <meshBasicMaterial transparent opacity={SCENE_THEME.light ? 0.85 : 1} blending={glowBlending()} depthWrite={false} toneMapped={false} />
       </instancedMesh>
 
       {groups.household.length > 0 && (
@@ -167,7 +168,7 @@ export function Nodes({ init, frame, selected, hovered, onPick, onHover, compact
           onPointerDown={pick(groups.household)} onPointerMove={hover(groups.household)} onPointerOut={() => onHover(null)}
         >
           <boxGeometry args={[0.7, 0.7, 0.7]} />
-          <meshStandardMaterial roughness={0.5} metalness={0.2} emissive="#0e2a3a" />
+          <meshStandardMaterial roughness={0.5} metalness={0.2} emissive={SCENE_THEME.light ? '#000000' : '#1a1630'} />
         </instancedMesh>
       )}
 
@@ -177,7 +178,7 @@ export function Nodes({ init, frame, selected, hovered, onPick, onHover, compact
           onPointerDown={pick(groups.relay)} onPointerMove={hover(groups.relay)} onPointerOut={() => onHover(null)}
         >
           <cylinderGeometry args={[0.28, 0.45, 3.2, 8]} />
-          <meshStandardMaterial roughness={0.4} metalness={0.4} emissive="#0b3b2f" />
+          <meshStandardMaterial roughness={0.4} metalness={0.4} emissive={SCENE_THEME.light ? '#000000' : '#0b2e22'} />
         </instancedMesh>
       )}
 
@@ -211,7 +212,7 @@ function Gateway({ position, onPick }: { position: THREE.Vector3; onPick: () => 
     <group position={position} onPointerDown={(e) => { e.stopPropagation(); onPick() }}>
       <mesh position={[0, 2.5, 0]}>
         <cylinderGeometry args={[0.35, 1.1, 5, 6]} />
-        <meshStandardMaterial color="#1f3b4d" metalness={0.6} roughness={0.3} emissive="#05301f" />
+        <meshStandardMaterial color={SCENE_THEME.light ? '#4b4b63' : '#2a2a3d'} metalness={0.6} roughness={0.3} emissive={SCENE_THEME.light ? '#000000' : '#06240f'} />
       </mesh>
       <mesh position={[0, 6.2, 0]}>
         <cylinderGeometry args={[0.07, 0.07, 2.6, 6]} />
@@ -249,7 +250,7 @@ function Boat({ target, frame, idx, onPick }: { target: THREE.Vector3; frame: Fr
     <group ref={g} position={target} onPointerDown={(e) => { e.stopPropagation(); onPick() }}>
       <mesh position={[0, 0.25, 0]}>
         <boxGeometry args={[1.1, 0.5, 2.6]} />
-        <meshStandardMaterial color="#f59e0b" emissive="#5a3300" />
+        <meshStandardMaterial color="#f59e0b" emissive={SCENE_THEME.light ? '#000000' : '#5a3300'} />
       </mesh>
       <mesh position={[0, 0.65, 1.2]} rotation={[0.5, 0, 0]}>
         <boxGeometry args={[1.0, 0.4, 0.6]} />
@@ -283,7 +284,7 @@ function SelectionMarker({ position, label, compact }: { position: THREE.Vector3
       </mesh>
       {!compact && (
         <Html position={[position.x, position.y + 6, position.z]} center zIndexRange={[20, 0]}>
-          <div className="pointer-events-none rounded-md border border-cyan-400/50 bg-[#070d1a]/85 px-2 py-0.5 font-mono text-[11px] text-cyan-200">
+          <div className="pointer-events-none rounded-md border border-signal/50 bg-panel/90 px-2 py-0.5 font-mono text-[11px] text-signal">
             {label}
           </div>
         </Html>
@@ -297,10 +298,10 @@ function HoverCard({ init, frame, idx, position }: { init: InitPayload; frame: F
   const st = frame.nodes.state[idx]
   return (
     <Html position={[position.x, position.y + 3.5, position.z]} center zIndexRange={[30, 0]}>
-      <div className="pointer-events-none w-40 rounded-lg border border-[#1d2b45] bg-[#0c1526]/95 p-2 font-mono text-[10.5px] leading-4 text-slate-300 shadow-xl">
-        <div className="mb-1 flex justify-between text-[11px] text-white">
+      <div className="pointer-events-none w-40 rounded-lg border border-line bg-panel/95 p-2 font-mono text-[10.5px] leading-4 text-ink/80 shadow-xl">
+        <div className="mb-1 flex justify-between text-[11px] text-ink">
           <span>{node.id}</span>
-          <span className="text-slate-400">{node.kind}</span>
+          <span className="text-mute">{node.kind}</span>
         </div>
         <div>τ {st === 3 ? 'dead' : fmtTau(frame.nodes.tau[idx])}</div>
         <div>battery {(frame.nodes.batt[idx] * 100).toFixed(0)}%</div>

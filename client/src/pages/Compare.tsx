@@ -40,7 +40,7 @@ function CompareLauncher() {
           The same disaster, the same seed and the same boxes, run under different forwarding strategies on synced maps.
           You see the difference instead of being told it.
         </p>
-        {err && <div className="panel mt-4 border-rose-500/40 p-3 text-sm text-rose-200">{err}</div>}
+        {err && <div className="panel mt-4 border-danger/40 p-3 text-sm text-danger">{err}</div>}
       </div>
       <ScenarioPicker mode="compare" onLaunch={launch} busy={busy} />
     </div>
@@ -74,12 +74,12 @@ function Race({ groupId }: { groupId: string }) {
     return () => unsubs.forEach((u) => u())
   }, [stores])
 
-  if (err) return <div className="p-8 text-rose-300">{err}</div>
+  if (err) return <div className="p-8 text-danger">{err}</div>
   if (!stores.length) return <div className="p-8 text-mute">Loading race…</div>
   const cols = stores.length === 2 ? 'md:grid-cols-2' : 'md:grid-cols-2 md:grid-rows-2'
 
   return (
-    <div className="flex h-[calc(100vh-3.5rem)] flex-col gap-3 p-3">
+    <div className="flex min-h-[calc(100vh-3.5rem)] flex-col gap-3 p-2 sm:p-3 md:h-[calc(100vh-3.5rem)]">
       <div className={`grid min-h-0 flex-1 grid-cols-1 gap-3 ${cols}`}>
         {stores.map((s) => <RaceCell key={s.getState().runId} store={s} />)}
       </div>
@@ -96,7 +96,7 @@ function RaceCell({ store }: { store: RunStore }) {
   useReplayTicker(store)
   return (
     <RunStoreContext.Provider value={store}>
-      <div className="panel relative min-h-[260px] overflow-hidden">
+      <div className="panel relative min-h-[320px] overflow-hidden md:min-h-[260px]">
         <div className="absolute inset-0"><WorldScene compact /></div>
         <div className="pointer-events-none absolute inset-x-2 top-2">
           <div className="pointer-events-auto"><RunHeader compact /></div>
@@ -164,7 +164,7 @@ function GroupTimeline({ stores }: { stores: RunStore[] }) {
         }}
         aria-label="Shared timeline"
       />
-      {mode === 'live' && <button className="chip text-rose-300" onClick={() => seekAll(null)}>{ended ? 'END' : 'LIVE'}</button>}
+      {mode === 'live' && <button className="chip text-danger" onClick={() => seekAll(null)}>{ended ? 'END' : 'LIVE'}</button>}
     </div>
   )
 }
@@ -195,10 +195,10 @@ function Scoreboard({ stores }: { stores: RunStore[] }) {
   useGroupTick(stores)
   return (
     <div className="panel px-4 py-3">
-      <div className="mb-2 flex items-center gap-2"><Trophy size={14} className="text-amber-300" /><span className="label">Standings</span></div>
+      <div className="mb-2 flex items-center gap-2"><Trophy size={14} className="text-warn" /><span className="label">Standings</span></div>
       <div className="grid grid-cols-3 gap-4">
         <Metric stores={stores} title="Delivered" pick={(m) => m.delivered} color={C.safe} best="max" />
-        <Metric stores={stores} title="Lost with box" pick={(m) => m.lost} color="#94a3b8" best="min" />
+        <Metric stores={stores} title="Lost with box" pick={(m) => m.lost} color={C.ash} best="min" />
         <Metric stores={stores} title="Relay airtime (s)" pick={(m) => m.relay_airtime_s} color={C.warn} best="min" />
       </div>
       <div className="mt-3 grid gap-1">
@@ -213,7 +213,7 @@ function RiverRow({ store }: { store: RunStore }) {
   return (
     <div className="flex items-center gap-2">
       <span className="w-28 truncate text-[10px] text-mute">{label}</span>
-      <div className="h-5 flex-1 overflow-hidden rounded bg-[#0a1222]"><SurvivalRiver frames={frames} width={600} height={20} /></div>
+      <div className="h-5 flex-1 overflow-hidden rounded bg-sunken"><SurvivalRiver frames={frames} width={600} height={20} /></div>
     </div>
   )
 }
@@ -231,7 +231,7 @@ function Metric({ stores, title, pick, color, best }: { stores: RunStore[]; titl
       <div className="flex flex-col gap-1">
         {vals.map((x, k) => (
           <div key={k} className="flex items-center gap-1.5" title={`${x.label}: ${Number.isInteger(x.v) ? x.v : x.v.toFixed(1)}`}>
-            <div className="h-2.5 flex-1 overflow-hidden rounded bg-[#1d2b45]">
+            <div className="h-2.5 flex-1 overflow-hidden rounded bg-line">
               <motion.div className="h-full rounded" style={{ background: color, opacity: x.v === winner ? 1 : 0.45 }} animate={{ width: `${(x.v / max) * 100}%` }} transition={{ duration: 0.4 }} />
             </div>
             <span className="w-10 text-right font-mono text-[10px] tabular-nums">{Number.isInteger(x.v) ? x.v : x.v.toFixed(0)}</span>

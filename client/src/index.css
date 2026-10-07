@@ -1,25 +1,75 @@
 @import "tailwindcss";
 
-/* Colour carries meaning, fixed everywhere (see the Architecture Dossier). Never reuse for decoration. */
-@theme {
-  --color-bg: #070d1a;
-  --color-panel: #0c1526;
-  --color-panel-2: #111d33;
-  --color-line: #1d2b45;
-  --color-ink: #e6edf7;
-  --color-mute: #8a9bb8;
-  --color-signal: #22d3ee;
-  --color-safe: #34d399;
-  --color-warn: #fbbf24;
-  --color-danger: #f43f5e;
-  --color-water: #3b82f6;
-  --color-violet: #a78bfa;
-  --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/*
+ * Theme tokens. Surfaces change with the theme; the meaning colours (safe, warn, danger, water,
+ * signal) keep their meaning everywhere and are never reused for decoration.
+ */
+:root,
+[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0b0b10;
+  --panel: #15151d;
+  --panel-2: #1c1c27;
+  --sunken: #101017;
+  --line: #2a2a38;
+  --line-strong: #3d3d52;
+  --ink: #ececf1;
+  --mute: #9494a8;
+  --signal: #8b7cff;
+  --signal-strong: #a597ff;
+  --on-signal: #ffffff;
+  --safe: #22c55e;
+  --warn: #f59e0b;
+  --danger: #ef4444;
+  --water: #3b82f6;
+  --part: #ec4899;
+  --glass: rgb(21 21 29 / 0.82);
+  --shadow: 0 10px 40px -12px rgb(0 0 0 / 0.6);
 }
 
-:root {
-  color-scheme: dark;
+[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f7f7fb;
+  --panel: #ffffff;
+  --panel-2: #f1f1f7;
+  --sunken: #ececf3;
+  --line: #e2e2ec;
+  --line-strong: #c9c9d8;
+  --ink: #16161d;
+  --mute: #6b6b80;
+  --signal: #5b4bdb;
+  --signal-strong: #4a3bc4;
+  --on-signal: #ffffff;
+  --safe: #16a34a;
+  --warn: #d97706;
+  --danger: #dc2626;
+  --water: #2563eb;
+  --part: #db2777;
+  --glass: rgb(255 255 255 / 0.86);
+  --shadow: 0 10px 30px -14px rgb(30 30 60 / 0.25);
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-panel: var(--panel);
+  --color-panel-2: var(--panel-2);
+  --color-sunken: var(--sunken);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-ink: var(--ink);
+  --color-mute: var(--mute);
+  --color-signal: var(--signal);
+  --color-signal-strong: var(--signal-strong);
+  --color-on-signal: var(--on-signal);
+  --color-safe: var(--safe);
+  --color-warn: var(--warn);
+  --color-danger: var(--danger);
+  --color-water: var(--water);
+  --color-part: var(--part);
+  --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
 }
 
 html,
@@ -30,22 +80,25 @@ body,
 
 body {
   margin: 0;
-  background: var(--color-bg);
-  color: var(--color-ink);
+  background: var(--bg);
+  color: var(--ink);
   font-family: var(--font-display);
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  transition: background-color 200ms, color 200ms;
 }
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: #1d2b45 transparent;
+  scrollbar-color: var(--line-strong) transparent;
 }
 
 .panel {
-  background: color-mix(in srgb, var(--color-panel) 86%, transparent);
-  border: 1px solid var(--color-line);
-  backdrop-filter: blur(10px);
+  background: var(--glass);
+  border: 1px solid var(--line);
+  backdrop-filter: blur(12px);
   border-radius: 14px;
+  box-shadow: var(--shadow);
 }
 
 .chip {
@@ -56,8 +109,8 @@ body {
   padding: 0.15rem 0.55rem;
   font-size: 0.7rem;
   font-family: var(--font-mono);
-  border: 1px solid var(--color-line);
-  background: var(--color-panel-2);
+  border: 1px solid var(--line);
+  background: var(--panel-2);
 }
 
 .btn {
@@ -69,13 +122,14 @@ body {
   padding: 0.5rem 0.9rem;
   font-weight: 600;
   font-size: 0.875rem;
-  border: 1px solid var(--color-line);
-  background: var(--color-panel-2);
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+  color: var(--ink);
   transition: border-color 150ms, background 150ms, transform 150ms;
   cursor: pointer;
 }
 .btn:hover {
-  border-color: #2f4670;
+  border-color: var(--line-strong);
 }
 .btn:active {
   transform: translateY(1px);
@@ -85,30 +139,31 @@ body {
   cursor: not-allowed;
 }
 .btn-primary {
-  background: linear-gradient(135deg, #0891b2, #0e7490);
-  border-color: #22d3ee66;
-  color: white;
+  background: var(--signal);
+  border-color: transparent;
+  color: var(--on-signal);
 }
 .btn-primary:hover {
-  border-color: #22d3ee;
+  background: var(--signal-strong);
+  border-color: transparent;
 }
 .btn-danger {
-  background: #3b0a17;
-  border-color: #f43f5e66;
-  color: #fecdd3;
+  background: color-mix(in srgb, var(--danger) 12%, var(--panel));
+  border-color: color-mix(in srgb, var(--danger) 45%, transparent);
+  color: var(--danger);
 }
 
 .label {
   font-size: 0.68rem;
   text-transform: uppercase;
   letter-spacing: 0.12em;
-  color: var(--color-mute);
+  color: var(--mute);
 }
 
 .grid-bg {
   background-image:
-    linear-gradient(to right, #ffffff08 1px, transparent 1px),
-    linear-gradient(to bottom, #ffffff08 1px, transparent 1px);
+    linear-gradient(to right, color-mix(in srgb, var(--ink) 5%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--ink) 5%, transparent) 1px, transparent 1px);
   background-size: 48px 48px;
 }
 
@@ -116,7 +171,7 @@ input[type="range"].scrub {
   appearance: none;
   height: 6px;
   border-radius: 999px;
-  background: #1d2b45;
+  background: var(--line);
   outline: none;
 }
 input[type="range"].scrub::-webkit-slider-thumb {
@@ -124,8 +179,8 @@ input[type="range"].scrub::-webkit-slider-thumb {
   width: 14px;
   height: 14px;
   border-radius: 999px;
-  background: var(--color-signal);
-  box-shadow: 0 0 0 4px #22d3ee33;
+  background: var(--signal);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--signal) 25%, transparent);
   cursor: pointer;
 }
 input[type="range"].scrub::-moz-range-thumb {
@@ -133,17 +188,17 @@ input[type="range"].scrub::-moz-range-thumb {
   height: 14px;
   border: 0;
   border-radius: 999px;
-  background: var(--color-signal);
+  background: var(--signal);
   cursor: pointer;
 }
 
 select,
 input[type="number"] {
-  background: var(--color-panel-2);
-  border: 1px solid var(--color-line);
+  background: var(--panel-2);
+  border: 1px solid var(--line);
   border-radius: 10px;
   padding: 0.45rem 0.6rem;
-  color: var(--color-ink);
+  color: var(--ink);
   font-size: 0.85rem;
 }
 

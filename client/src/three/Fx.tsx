@@ -1,7 +1,7 @@
 import { useFrame } from '@react-three/fiber'
 import { forwardRef, useImperativeHandle, useMemo, useRef } from 'react'
 import * as THREE from 'three'
-import { prefersReducedMotion } from '../lib/visual'
+import { C, SCENE_THEME, glowBlending, prefersReducedMotion } from '../lib/visual'
 import { useInstanceColors } from './instancing'
 
 const MAX_P = 3000
@@ -41,11 +41,12 @@ const pointVert = /* glsl */ `
   }
 `
 const pointFrag = /* glsl */ `
+  uniform float uLight;
   varying vec3 vColor;
   void main() {
     vec2 d = gl_PointCoord - 0.5;
     float a = smoothstep(0.5, 0.0, length(d));
-    gl_FragColor = vec4(vColor * a * 1.6, a);
+    gl_FragColor = uLight > 0.5 ? vec4(vColor, a) : vec4(vColor * a * 1.6, a);
   }
 `
 
@@ -68,7 +69,8 @@ export const Fx = forwardRef<FxApi>(function Fx(_, ref) {
   const mat = useMemo(
     () => new THREE.ShaderMaterial({
       vertexShader: pointVert, fragmentShader: pointFrag, transparent: true,
-      depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false,
+      uniforms: { uLight: { value: SCENE_THEME.light ? 1 : 0 } },
+      depthWrite: false, blending: glowBlending(), toneMapped: false,
     }),
     [],
   )
@@ -95,7 +97,7 @@ export const Fx = forwardRef<FxApi>(function Fx(_, ref) {
         ripples.current.push({ x: p.x, y: p.y + 0.15, z: p.z, t0: clock.current, dur, maxR, r: col.r, g: col.g, b: col.b })
       },
       ash(p) {
-        col.set('#94a3b8')
+        col.set(C.ash)
         for (let k = 0; k < 10; k++) {
           const dx = (Math.random() - 0.5) * 2
           const dz = (Math.random() - 0.5) * 2
@@ -114,6 +116,7 @@ export const Fx = forwardRef<FxApi>(function Fx(_, ref) {
   const tmpV = useMemo(() => new THREE.Vector3(), [])
   const tmpS = useMemo(() => new THREE.Vector3(), [])
   const tmpC = useMemo(() => new THREE.Color(), [])
+  const bgC = useMemo(() => new THREE.Color(C.bg), [])
 
   useFrame((_, dt) => {
     clock.current += Math.min(dt, 0.1)
@@ -162,7 +165,8 @@ export const Fx = forwardRef<FxApi>(function Fx(_, ref) {
         const rad = 0.4 + r.maxR * (1 - (1 - u) * (1 - u))
         tmpM.compose(tmpV.set(r.x, r.y, r.z), tmpQ, tmpS.setScalar(rad))
         mesh.setMatrixAt(i, tmpM)
-        mesh.setColorAt(i, tmpC.setRGB(r.r, r.g, r.b).multiplyScalar(1.6 * (1 - u)))
+        if (SCENE_THEME.light) mesh.setColorAt(i, tmpC.setRGB(r.r, r.g, r.b).lerp(bgC, u))
+        else mesh.setColorAt(i, tmpC.setRGB(r.r, r.g, r.b).multiplyScalar(1.6 * (1 - u)))
       }
       mesh.instanceMatrix.needsUpdate = true
       if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true
@@ -174,7 +178,7 @@ export const Fx = forwardRef<FxApi>(function Fx(_, ref) {
       <points geometry={geom} material={mat} frustumCulled={false} renderOrder={5} />
       <instancedMesh ref={ringMesh} args={[undefined, undefined, MAX_R]} frustumCulled={false} renderOrder={4}>
         <ringGeometry args={[0.9, 1, 64]} />
-        <meshBasicMaterial transparent blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} side={THREE.DoubleSide} />
+        <meshBasicMaterial transparent blending={glowBlending()} depthWrite={false} toneMapped={false} side={THREE.DoubleSide} />
       </instancedMesh>
     </group>
   )

@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import { C } from '../lib/visual'
 
 /** Hazard glyphs drawn once onto canvases: water drop, cracked ring, flame, empty cell, tilt. */
 type Painter = (g: CanvasRenderingContext2D, s: number) => void
@@ -67,19 +68,22 @@ const painters: Record<string, Painter> = {
 const cache: Record<string, THREE.Texture> = {}
 
 export function glyphTexture(cause: string): THREE.Texture {
-  if (cache[cause]) return cache[cause]
+  const id = `${C.bg}:${cause}`
+  if (cache[id]) return cache[id]
   const s = 64
   const canvas = document.createElement('canvas')
   canvas.width = canvas.height = s
   const g = canvas.getContext('2d')!
-  g.fillStyle = 'rgba(7,13,26,0.75)'
+  g.fillStyle = C.panel
+  g.globalAlpha = 0.9
   g.beginPath()
   g.arc(s / 2, s / 2, s / 2 - 1, 0, Math.PI * 2)
   g.fill()
+  g.globalAlpha = 1
   ;(painters[cause] || painters.shock)(g, s)
   const tex = new THREE.CanvasTexture(canvas)
   tex.colorSpace = THREE.SRGBColorSpace
-  cache[cause] = tex
+  cache[id] = tex
   return tex
 }
 

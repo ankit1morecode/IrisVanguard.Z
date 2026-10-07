@@ -6,11 +6,11 @@ import { api } from '../lib/api'
 import type { RunMeta } from '../lib/types'
 
 const STATUS_STYLE: Record<string, string> = {
-  running: 'text-rose-300 border-rose-500/40',
-  paused: 'text-amber-300 border-amber-500/40',
-  starting: 'text-amber-300 border-amber-500/40',
-  ended: 'text-slate-300',
-  failed: 'text-rose-400 border-rose-600/60',
+  running: 'text-danger border-danger/40',
+  paused: 'text-warn border-warn/40',
+  starting: 'text-warn border-warn/40',
+  ended: 'text-ink/80',
+  failed: 'text-danger border-danger/60',
 }
 
 export function Runs() {
@@ -41,7 +41,7 @@ export function Runs() {
           <h1 className="text-3xl font-semibold tracking-tight">Runs</h1>
           <p className="mt-1 text-sm text-mute">
             Every run is event-sourced into MongoDB, so any of them can be replayed and scrubbed later.
-            {db === false && <span className="text-amber-300"> MongoDB is not connected: only runs from this server session are listed.</span>}
+            {db === false && <span className="text-warn"> MongoDB is not connected: only runs from this server session are listed.</span>}
           </p>
         </div>
         <div className="flex gap-2">
@@ -49,7 +49,7 @@ export function Runs() {
           <Link to="/compare" className="btn"><Columns2 size={14} /> New comparison</Link>
         </div>
       </div>
-      {err && <div className="panel mt-6 border-rose-500/40 p-3 text-sm text-rose-200">{err}</div>}
+      {err && <div className="panel mt-6 border-danger/40 p-3 text-sm text-danger">{err}</div>}
       <div className="panel mt-6 overflow-x-auto">
         <table className="w-full min-w-[760px] text-left text-sm">
           <thead className="text-[11px] uppercase tracking-wider text-mute">
@@ -70,12 +70,12 @@ export function Runs() {
             {runs?.map((r) => {
               const s = r.summary
               return (
-                <tr key={r.runId} className="border-b border-line/60 hover:bg-white/[0.02]">
+                <tr key={r.runId} className="border-b border-line/60 hover:bg-ink/[0.03]">
                   <td className="px-4 py-2.5 font-mono text-xs text-mute">{new Date(r.startedAt).toLocaleString()}</td>
                   <td className="px-4 py-2.5">{r.scenario}</td>
                   <td className="px-4 py-2.5">
                     {r.strategyLabel}
-                    {r.groupId && <Link to={`/compare/${r.groupId}`} className="chip ml-2 text-violet-300 hover:border-violet-400/60">race</Link>}
+                    {r.groupId && <Link to={`/compare/${r.groupId}`} className="chip ml-2 text-signal hover:border-signal/60">race</Link>}
                   </td>
                   <td className="px-4 py-2.5"><span className={`chip ${STATUS_STYLE[r.status] || ''}`}>{r.status}</span></td>
                   <td className="px-4 py-1">{s ? <FlowBar created={s.created} delivered={s.delivered} lost={s.lost} /> : <span className="text-xs text-mute">T+{r.lastTick ?? 0}s</span>}</td>
@@ -86,7 +86,7 @@ export function Runs() {
                         {r.status === 'running' || r.status === 'paused' ? <Play size={13} /> : <RotateCcw size={13} />}
                         {r.status === 'running' || r.status === 'paused' ? 'Watch' : 'Replay'}
                       </Link>
-                      <button className="btn !px-2 !py-1 !text-xs text-rose-300" onClick={() => remove(r)} aria-label="Delete run"><Trash2 size={13} /></button>
+                      <button className="btn !px-2 !py-1 !text-xs text-danger" onClick={() => remove(r)} aria-label="Delete run"><Trash2 size={13} /></button>
                     </div>
                   </td>
                 </tr>

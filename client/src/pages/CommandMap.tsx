@@ -38,7 +38,7 @@ function Launcher() {
           Start a live digital twin: hundreds of simulated boxes running the real survival rules while the disaster unfolds.
           Click any box to inspect it, or sink it and watch its messages escape.
         </p>
-        {err && <div className="panel mt-4 border-rose-500/40 p-3 text-sm text-rose-200">{err}</div>}
+        {err && <div className="panel mt-4 border-danger/40 p-3 text-sm text-danger">{err}</div>}
       </div>
       <ScenarioPicker mode="single" onLaunch={launch} busy={busy} />
     </div>
@@ -55,11 +55,11 @@ function LiveCommandMap({ runId }: { runId: string }) {
         <div className="absolute inset-0">
           <WorldScene />
         </div>
-        <div className="pointer-events-none absolute inset-0 flex flex-col gap-3 p-3">
+        <div className="pointer-events-none absolute inset-0 flex flex-col gap-2 p-2 sm:gap-3 sm:p-3">
           <div className="pointer-events-auto"><RunHeader /></div>
-          <div className="flex min-h-0 flex-1 items-start justify-between gap-3">
+          <div className="flex min-h-0 flex-1 flex-col justify-between gap-3 md:flex-row md:items-start">
             <div className="pointer-events-auto hidden h-full md:flex"><Legend /></div>
-            <div className="pointer-events-auto h-full w-[min(360px,100%)]"><Inspector /></div>
+            <div className="pointer-events-auto mt-auto h-[44%] w-full md:mt-0 md:h-full md:w-[360px]"><Inspector /></div>
           </div>
           <div className="pointer-events-auto"><Timeline /></div>
         </div>

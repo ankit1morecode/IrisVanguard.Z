@@ -72,7 +72,7 @@ function NodeInspector({ idx }: { idx: number }) {
       <div className="flex items-start gap-3 p-4">
         <div className="relative grid h-14 w-14 shrink-0 place-items-center">
           {!dead && <span className={`absolute inset-0 rounded-full border-[3px] ${st >= 1 ? 'breathe' : ''}`} style={{ borderColor: halo, boxShadow: `0 0 18px ${halo}` }} />}
-          <span className={`h-5 w-5 rounded ${dead ? 'bg-slate-600' : 'bg-slate-200'}`} />
+          <span className={`h-5 w-5 rounded ${dead ? 'bg-mute' : 'bg-ink/70'}`} />
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
@@ -84,27 +84,27 @@ function NodeInspector({ idx }: { idx: number }) {
             {!dead && <span className="chip" style={{ color: NET_COLORS[net], borderColor: `${NET_COLORS[net]}55` }}>{NET_STATE[net]}</span>}
           </div>
         </div>
-        <button className="text-mute hover:text-white" onClick={() => store.getState().select(null)} aria-label="Close"><X size={18} /></button>
+        <button className="text-mute hover:text-ink" onClick={() => store.getState().select(null)} aria-label="Close"><X size={18} /></button>
       </div>
 
       <div className="flex-1 overflow-y-auto">
         {dead && (
-          <div className="mx-4 mb-3 flex items-center gap-2 rounded-lg border border-slate-600 bg-slate-800/40 p-2 text-sm text-slate-300">
+          <div className="mx-4 mb-3 flex items-center gap-2 rounded-lg border border-line-strong bg-sunken p-2 text-sm text-ink/80">
             <Skull size={16} /> Box destroyed{focus?.death_cause ? ` (${focus.death_cause})` : ''}
           </div>
         )}
         {st === 2 && (
-          <div className="mx-4 mb-3 flex items-center gap-2 rounded-lg border border-rose-500/50 bg-rose-500/10 p-2 text-sm text-rose-200">
+          <div className="mx-4 mb-3 flex items-center gap-2 rounded-lg border border-danger/50 bg-danger/10 p-2 text-sm text-danger">
             <Siren size={16} className="breathe" /> Evacuating: handing its messages to safer boxes
           </div>
         )}
 
         <Section title="Predicted life" right={<span className="font-mono text-xs text-mute" title="expected time left (τ)">{dead ? '—' : `τ ${fmtTau(tau)}`}</span>}>
           <div className="flex flex-wrap gap-1.5">
-            {causes.length === 0 && !dead && <span className="chip text-emerald-300">no hazard sensed</span>}
+            {causes.length === 0 && !dead && <span className="chip text-safe">no hazard sensed</span>}
             {causes.map((c) => {
               const Icon = CAUSE_ICON[c] || Zap
-              return <span key={c} className="chip border-amber-400/40 text-amber-200"><Icon size={12} />{c.replace('_', ' ')}</span>
+              return <span key={c} className="chip border-warn/40 text-warn"><Icon size={12} />{c.replace('_', ' ')}</span>
             })}
           </div>
           {hist.length > 1 && (
@@ -145,7 +145,7 @@ function NodeInspector({ idx }: { idx: number }) {
         <Section title={`Holding ${frame.nodes.store[idx]} message${frame.nodes.store[idx] === 1 ? '' : 's'}`}>
           <div className="flex flex-col gap-1">
             {(focus?.store ?? []).map(([key, cls, S]) => (
-              <button key={key} className="flex items-center gap-2 rounded-md px-1 py-0.5 text-left hover:bg-white/5" onClick={() => store.getState().select({ kind: 'msg', key })}>
+              <button key={key} className="flex items-center gap-2 rounded-md px-1 py-0.5 text-left hover:bg-ink/5" onClick={() => store.getState().select({ kind: 'msg', key })}>
                 <SurvivalRing S={S} target={init.cfg.targets[cls] ?? 0.9} size={26} />
                 <span className="font-mono text-xs">{key}</span>
                 <span className="ml-auto font-mono text-[10px]" style={{ color: CLASS_COLORS[cls] }}>{cls}</span>
@@ -162,10 +162,10 @@ function NodeInspector({ idx }: { idx: number }) {
                 <div key={k} className="flex items-center gap-2 text-xs">
                   <span className="w-16 truncate font-mono text-mute">{key}</span>
                   <ChevronRight size={12} className="text-mute" />
-                  <button className="w-12 font-mono hover:text-cyan-300" onClick={() => store.getState().select({ kind: 'node', idx: to })}>{init.nodes[to]?.id}</button>
-                  <span className={`chip !px-1.5 !py-0 ${kind === 'forward' ? 'text-cyan-300' : 'text-sky-200'}`}>{kind}</span>
-                  <span className="h-1.5 w-10 overflow-hidden rounded bg-[#1d2b45]" title={`survival gain ${gain}`}>
-                    <span className="block h-full bg-cyan-400" style={{ width: `${Math.min(gain * 100, 100)}%` }} />
+                  <button className="w-12 font-mono hover:text-signal" onClick={() => store.getState().select({ kind: 'node', idx: to })}>{init.nodes[to]?.id}</button>
+                  <span className={`chip !px-1.5 !py-0 ${kind === 'forward' ? 'text-signal' : 'text-signal'}`}>{kind}</span>
+                  <span className="h-1.5 w-10 overflow-hidden rounded bg-line" title={`survival gain ${gain}`}>
+                    <span className="block h-full bg-signal" style={{ width: `${Math.min(gain * 100, 100)}%` }} />
                   </span>
                   <span className="ml-auto"><GateChips failed={failed} /></span>
                 </div>
@@ -177,9 +177,9 @@ function NodeInspector({ idx }: { idx: number }) {
         {canInject && (
           <Section title="What if…">
             <div className="grid grid-cols-2 gap-2">
-              <button className="btn !justify-start !text-xs" onClick={() => inject('sink')}><Waves size={14} className="text-blue-300" /> Sink it</button>
-              <button className="btn !justify-start !text-xs" onClick={() => inject('collapse')}><Building2 size={14} className="text-orange-300" /> Collapse here</button>
-              <button className="btn !justify-start !text-xs" onClick={() => inject('sos', { cls: 'P0' })}><Radio size={14} className="text-cyan-300" /> Send SOS</button>
+              <button className="btn !justify-start !text-xs" onClick={() => inject('sink')}><Waves size={14} className="text-water" /> Sink it</button>
+              <button className="btn !justify-start !text-xs" onClick={() => inject('collapse')}><Building2 size={14} className="text-warn" /> Collapse here</button>
+              <button className="btn !justify-start !text-xs" onClick={() => inject('sos', { cls: 'P0' })}><Radio size={14} className="text-signal" /> Send SOS</button>
               <button className="btn btn-danger !justify-start !text-xs" onClick={() => inject('kill')}><Bomb size={14} /> Destroy now</button>
             </div>
             <p className="mt-2 text-[11px] leading-snug text-mute">
@@ -229,24 +229,24 @@ function MessageInspector({ msgKey }: { msgKey: string }) {
         <div className="min-w-0 flex-1">
           <h3 className="font-mono text-lg font-semibold">{msgKey}</h3>
           <div className="mt-1 text-sm text-mute">
-            {status === 1 && <span className="text-emerald-300">Delivered to the control room</span>}
-            {status === 2 && <span className="text-slate-400">Lost with its last holder</span>}
+            {status === 1 && <span className="text-safe">Delivered to the control room</span>}
+            {status === 2 && <span className="text-mute">Lost with its last holder</span>}
             {status === 0 && <span>Alive · survival {Math.round((row?.[2] ?? 0) * 100)}% of {Math.round(target * 100)}% target</span>}
             {status === null && <span>Resolved earlier in the run</span>}
           </div>
         </div>
-        <button className="text-mute hover:text-white" onClick={() => store.getState().select(null)} aria-label="Close"><X size={18} /></button>
+        <button className="text-mute hover:text-ink" onClick={() => store.getState().select(null)} aria-label="Close"><X size={18} /></button>
       </div>
       <div className="flex-1 overflow-y-auto">
         {info && (
           <Section title="The SOS">
             <div className="grid grid-cols-3 gap-2 text-center">
-              <div className="rounded-lg bg-[#0b1324] p-2"><div className="text-xl font-semibold">{info.persons}</div><div className="text-[10px] text-mute">people</div></div>
-              <div className="rounded-lg bg-[#0b1324] p-2"><div className="text-sm font-semibold capitalize leading-7">{info.needs}</div><div className="text-[10px] text-mute">need</div></div>
-              <div className="rounded-lg bg-[#0b1324] p-2"><div className="font-mono text-sm leading-7">{fmtClock(info.tick)}</div><div className="text-[10px] text-mute">raised</div></div>
+              <div className="rounded-lg bg-sunken p-2"><div className="text-xl font-semibold">{info.persons}</div><div className="text-[10px] text-mute">people</div></div>
+              <div className="rounded-lg bg-sunken p-2"><div className="text-sm font-semibold capitalize leading-7">{info.needs}</div><div className="text-[10px] text-mute">need</div></div>
+              <div className="rounded-lg bg-sunken p-2"><div className="font-mono text-sm leading-7">{fmtClock(info.tick)}</div><div className="text-[10px] text-mute">raised</div></div>
             </div>
             {origin !== undefined && (
-              <button className="mt-2 text-xs text-cyan-300 hover:underline" onClick={() => store.getState().select({ kind: 'node', idx: origin })}>
+              <button className="mt-2 text-xs text-signal hover:underline" onClick={() => store.getState().select({ kind: 'node', idx: origin })}>
                 from box {init.nodes[origin]?.id} →
               </button>
             )}
@@ -258,7 +258,7 @@ function MessageInspector({ msgKey }: { msgKey: string }) {
               {row[5].map((h) => {
                 const st = frame.nodes.state[h]
                 return (
-                  <button key={h} className="chip hover:border-cyan-400/60" style={{ color: st >= 2 ? C.danger : st === 1 ? C.warn : C.ink }} onClick={() => store.getState().select({ kind: 'node', idx: h })}>
+                  <button key={h} className="chip hover:border-signal/60" style={{ color: st >= 2 ? C.danger : st === 1 ? C.warn : C.ink }} onClick={() => store.getState().select({ kind: 'node', idx: h })}>
                     {init.nodes[h].id}
                   </button>
                 )
@@ -270,7 +270,7 @@ function MessageInspector({ msgKey }: { msgKey: string }) {
           {!journey && <span className="text-xs text-mute">loading…</span>}
           <ol className="relative ml-2 border-l border-line">
             {steps.map((e, k) => {
-              const color = e.t === 'msg.delivered' ? C.safe : e.t === 'msg.lost' ? '#94a3b8' : e.evac ? C.danger : C.signal
+              const color = e.t === 'msg.delivered' ? C.safe : e.t === 'msg.lost' ? C.ash : e.evac ? C.danger : C.signal
               const label = e.t === 'msg.created' ? `raised at ${init.nodes[e.node as number]?.id}`
                 : e.t === 'msg.copy' ? `${init.nodes[e.from as number]?.id} → ${init.nodes[e.to as number]?.id}${e.evac ? ' (evacuation)' : e.mode === 'forward' ? ' (forward)' : ' (survival copy)'}`
                   : e.t === 'msg.delivered' ? `delivered via ${init.nodes[e.via as number]?.id} in ${fmtTau(e.latency_s as number)}`
@@ -278,8 +278,8 @@ function MessageInspector({ msgKey }: { msgKey: string }) {
               return (
                 <li key={k} className="mb-2 ml-3">
                   <span className="absolute -left-[5px] mt-1.5 h-2.5 w-2.5 rounded-full" style={{ background: color, boxShadow: `0 0 8px ${color}` }} />
-                  <button className="text-left text-xs hover:text-white" onClick={() => jump(e.tick)}>
-                    <span className="font-mono text-mute">{fmtClock(e.tick)}</span> <span className="text-slate-200">{label}</span>
+                  <button className="text-left text-xs hover:text-ink" onClick={() => jump(e.tick)}>
+                    <span className="font-mono text-mute">{fmtClock(e.tick)}</span> <span className="text-ink">{label}</span>
                   </button>
                 </li>
               )
@@ -308,7 +308,7 @@ function MessageList() {
           <h3 className="font-semibold">SOS messages</h3>
           <div className="flex gap-1">
             {(['alive', 'all'] as const).map((f) => (
-              <button key={f} onClick={() => setFilter(f)} className={`chip ${filter === f ? 'border-cyan-400/60 text-cyan-200' : 'text-mute'}`}>{f}</button>
+              <button key={f} onClick={() => setFilter(f)} className={`chip ${filter === f ? 'border-signal/60 text-signal' : 'text-mute'}`}>{f}</button>
             ))}
           </div>
         </div>
@@ -318,7 +318,7 @@ function MessageList() {
       <div className="flex-1 overflow-y-auto px-2 pb-2">
         {rows.length === 0 && <div className="p-4 text-center text-xs text-mute">No {filter === 'alive' ? 'undelivered ' : ''}messages right now.</div>}
         {rows.map(([key, cls, S, status, , holders]) => (
-          <button key={key} onClick={() => store.getState().select({ kind: 'msg', key })} className="flex w-full items-center gap-3 rounded-lg px-2 py-1.5 text-left hover:bg-white/5">
+          <button key={key} onClick={() => store.getState().select({ kind: 'msg', key })} className="flex w-full items-center gap-3 rounded-lg px-2 py-1.5 text-left hover:bg-ink/5">
             <SurvivalRing S={status === 1 ? 1 : S} target={init.cfg.targets[cls] ?? 0.9} size={30} status={status} />
             <div className="min-w-0 flex-1">
               <div className="font-mono text-xs">{key}</div>
@@ -338,14 +338,14 @@ export function FlowBar({ created, delivered, lost }: { created: number; deliver
   const alive = Math.max(created - delivered - lost, 0)
   return (
     <div className="mt-3" title={`${delivered} delivered · ${alive} alive · ${lost} lost of ${created}`}>
-      <div className="flex h-2.5 overflow-hidden rounded-full bg-[#1d2b45]">
+      <div className="flex h-2.5 overflow-hidden rounded-full bg-line">
         <div style={{ width: `${(delivered / total) * 100}%`, background: C.safe, transition: 'width 400ms' }} />
         <div style={{ width: `${(alive / total) * 100}%`, background: C.signal, opacity: 0.6, transition: 'width 400ms' }} />
-        <div style={{ width: `${(lost / total) * 100}%`, background: '#64748b', transition: 'width 400ms' }} />
+        <div style={{ width: `${(lost / total) * 100}%`, background: C.isolated, transition: 'width 400ms' }} />
       </div>
       <div className="mt-1 flex justify-between font-mono text-[10px] text-mute">
-        <span className="text-emerald-300">{delivered} delivered</span>
-        <span className="text-cyan-300">{alive} alive</span>
+        <span className="text-safe">{delivered} delivered</span>
+        <span className="text-signal">{alive} alive</span>
         <span>{lost} lost</span>
       </div>
     </div>

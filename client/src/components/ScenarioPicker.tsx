@@ -73,12 +73,12 @@ export function ScenarioPicker({ mode, onLaunch, busy }: { mode: 'single' | 'com
         {!scenarios.length && !err && <div className="col-span-3 flex justify-center p-8 text-mute"><Loader2 className="animate-spin" /></div>}
       </div>
 
-      <div className="label mb-2 mt-6">2 · {mode === 'compare' ? 'Pick 2–4 strategies to race on the same seed' : 'Forwarding strategy'}</div>
+      <div className="label mb-2 mt-6">2 · {mode === 'compare' ? `Pick 2–4 strategies to race on the same seed · ${chosen.length} selected` : 'Forwarding strategy'}</div>
       <div className="flex flex-wrap gap-2">
         {strategies.map((s) => {
           const on = chosen.includes(s.id)
           return (
-            <button key={s.id} onClick={() => toggle(s.id)} className={`btn !text-xs ${on ? '!border-signal/70 !bg-signal/10 text-signal' : 'text-mute'}`}>
+            <button key={s.id} onClick={() => toggle(s.id)} aria-pressed={on} className={`btn !text-xs ${on ? '!border-transparent !bg-signal !text-on-signal' : 'text-mute'}`}>
               {on && <Check size={13} />} {s.label}
             </button>
           )
